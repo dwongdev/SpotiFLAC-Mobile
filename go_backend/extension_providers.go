@@ -110,19 +110,6 @@ type builtInProviderSpec struct {
 
 var builtInProviderRegistry = []builtInProviderSpec{
 	{
-		ID:               "tidal",
-		DisplayName:      "Tidal",
-		SupportsMetadata: true,
-		SupportsDownload: true,
-		SupportsSearch:   true,
-		GetMetadata:      GetTidalMetadata,
-		SearchAll:        SearchTidalAll,
-		SearchTracks: func(query string, limit int) ([]ExtTrackMetadata, error) {
-			return NewTidalDownloader().SearchTracks(query, limit)
-		},
-		Download: downloadWithBuiltInTidal,
-	},
-	{
 		ID:               "qobuz",
 		DisplayName:      "Qobuz",
 		SupportsMetadata: true,
@@ -185,26 +172,6 @@ func downloadWithBuiltInProvider(providerID string, req DownloadRequest) (Downlo
 	return spec.Download(req)
 }
 
-func downloadWithBuiltInTidal(req DownloadRequest) (DownloadResult, error) {
-	result, err := downloadFromTidal(req)
-	if err != nil {
-		return DownloadResult{}, err
-	}
-	return DownloadResult{
-		FilePath:    result.FilePath,
-		BitDepth:    result.BitDepth,
-		SampleRate:  result.SampleRate,
-		Title:       result.Title,
-		Artist:      result.Artist,
-		Album:       result.Album,
-		ReleaseDate: result.ReleaseDate,
-		TrackNumber: result.TrackNumber,
-		DiscNumber:  result.DiscNumber,
-		ISRC:        result.ISRC,
-		LyricsLRC:   result.LyricsLRC,
-	}, nil
-}
-
 func downloadWithBuiltInQobuz(req DownloadRequest) (DownloadResult, error) {
 	result, err := downloadFromQobuz(req)
 	if err != nil {
@@ -224,6 +191,139 @@ func downloadWithBuiltInQobuz(req DownloadRequest) (DownloadResult, error) {
 		CoverURL:    result.CoverURL,
 		LyricsLRC:   result.LyricsLRC,
 	}, nil
+}
+
+func normalizeExtensionDownloadResult(result *ExtDownloadResult) (DownloadResult, bool) {
+	if result == nil {
+		return DownloadResult{}, false
+	}
+
+	downloadResult := DownloadResult{
+		FilePath:      strings.TrimSpace(result.FilePath),
+		BitDepth:      result.BitDepth,
+		SampleRate:    result.SampleRate,
+		Title:         result.Title,
+		Artist:        result.Artist,
+		Album:         result.Album,
+		ReleaseDate:   result.ReleaseDate,
+		TrackNumber:   result.TrackNumber,
+		TotalTracks:   result.TotalTracks,
+		DiscNumber:    result.DiscNumber,
+		TotalDiscs:    result.TotalDiscs,
+		ISRC:          result.ISRC,
+		CoverURL:      result.CoverURL,
+		Genre:         result.Genre,
+		Label:         result.Label,
+		Copyright:     result.Copyright,
+		Composer:      result.Composer,
+		LyricsLRC:     result.LyricsLRC,
+		DecryptionKey: result.DecryptionKey,
+		Decryption:    normalizeDownloadDecryptionInfo(result.Decryption, result.DecryptionKey),
+	}
+
+	alreadyExists := result.AlreadyExists
+	if strings.HasPrefix(downloadResult.FilePath, "EXISTS:") {
+		alreadyExists = true
+		downloadResult.FilePath = strings.TrimPrefix(downloadResult.FilePath, "EXISTS:")
+	}
+
+	enrichResultQualityFromFile(&downloadResult)
+	return downloadResult, alreadyExists
+}
+
+func overlayExtensionDownloadMetadata(resp *DownloadResponse, result *ExtDownloadResult) {
+	if resp == nil || result == nil {
+		return
+	}
+
+	if strings.TrimSpace(resp.Title) == "" && result.Title != "" {
+		resp.Title = result.Title
+	}
+	if strings.TrimSpace(resp.Artist) == "" && result.Artist != "" {
+		resp.Artist = result.Artist
+	}
+	if strings.TrimSpace(resp.Album) == "" && result.Album != "" {
+		resp.Album = result.Album
+	}
+	if strings.TrimSpace(resp.AlbumArtist) == "" && result.AlbumArtist != "" {
+		resp.AlbumArtist = result.AlbumArtist
+	}
+	if resp.TrackNumber == 0 && result.TrackNumber > 0 {
+		resp.TrackNumber = result.TrackNumber
+	}
+	if resp.DiscNumber == 0 && result.DiscNumber > 0 {
+		resp.DiscNumber = result.DiscNumber
+	}
+	if resp.TotalTracks == 0 && result.TotalTracks > 0 {
+		resp.TotalTracks = result.TotalTracks
+	}
+	if resp.TotalDiscs == 0 && result.TotalDiscs > 0 {
+		resp.TotalDiscs = result.TotalDiscs
+	}
+	if strings.TrimSpace(resp.ReleaseDate) == "" && result.ReleaseDate != "" {
+		resp.ReleaseDate = result.ReleaseDate
+	}
+	if strings.TrimSpace(resp.CoverURL) == "" && result.CoverURL != "" {
+		resp.CoverURL = result.CoverURL
+	}
+	if strings.TrimSpace(resp.ISRC) == "" && result.ISRC != "" {
+		resp.ISRC = result.ISRC
+	}
+	if strings.TrimSpace(resp.Genre) == "" && result.Genre != "" {
+		resp.Genre = result.Genre
+	}
+	if strings.TrimSpace(resp.Label) == "" && result.Label != "" {
+		resp.Label = result.Label
+	}
+	if strings.TrimSpace(resp.Copyright) == "" && result.Copyright != "" {
+		resp.Copyright = result.Copyright
+	}
+	if strings.TrimSpace(resp.Composer) == "" && result.Composer != "" {
+		resp.Composer = result.Composer
+	}
+	if result.LyricsLRC != "" {
+		resp.LyricsLRC = result.LyricsLRC
+	}
+	if result.DecryptionKey != "" {
+		resp.DecryptionKey = result.DecryptionKey
+	}
+	if normalized := normalizeDownloadDecryptionInfo(result.Decryption, result.DecryptionKey); normalized != nil {
+		resp.Decryption = normalized
+	}
+}
+
+func applyExtensionRequestFallbacks(resp *DownloadResponse, req DownloadRequest) {
+	if resp == nil {
+		return
+	}
+
+	if req.AlbumName != "" && resp.Album == "" {
+		resp.Album = req.AlbumName
+	}
+	if req.AlbumArtist != "" && resp.AlbumArtist == "" {
+		resp.AlbumArtist = req.AlbumArtist
+	}
+	if req.ReleaseDate != "" && resp.ReleaseDate == "" {
+		resp.ReleaseDate = req.ReleaseDate
+	}
+	if req.ISRC != "" && resp.ISRC == "" {
+		resp.ISRC = req.ISRC
+	}
+	if req.TrackNumber > 0 && resp.TrackNumber == 0 {
+		resp.TrackNumber = req.TrackNumber
+	}
+	if req.TotalTracks > 0 && resp.TotalTracks == 0 {
+		resp.TotalTracks = req.TotalTracks
+	}
+	if req.DiscNumber > 0 && resp.DiscNumber == 0 {
+		resp.DiscNumber = req.DiscNumber
+	}
+	if req.TotalDiscs > 0 && resp.TotalDiscs == 0 {
+		resp.TotalDiscs = req.TotalDiscs
+	}
+	if req.CoverURL != "" && resp.CoverURL == "" {
+		resp.CoverURL = req.CoverURL
+	}
 }
 
 func shouldStopProviderFallback(availability *ExtAvailabilityResult) bool {
@@ -262,12 +362,13 @@ type DownloadDecryptionInfo struct {
 }
 
 type ExtDownloadResult struct {
-	Success      bool   `json:"success"`
-	FilePath     string `json:"file_path,omitempty"`
-	BitDepth     int    `json:"bit_depth,omitempty"`
-	SampleRate   int    `json:"sample_rate,omitempty"`
-	ErrorMessage string `json:"error_message,omitempty"`
-	ErrorType    string `json:"error_type,omitempty"`
+	Success       bool   `json:"success"`
+	FilePath      string `json:"file_path,omitempty"`
+	AlreadyExists bool   `json:"already_exists,omitempty"`
+	BitDepth      int    `json:"bit_depth,omitempty"`
+	SampleRate    int    `json:"sample_rate,omitempty"`
+	ErrorMessage  string `json:"error_message,omitempty"`
+	ErrorType     string `json:"error_type,omitempty"`
 
 	Title         string                  `json:"title,omitempty"`
 	Artist        string                  `json:"artist,omitempty"`
@@ -1728,81 +1829,25 @@ func DownloadWithExtensionFallback(req DownloadRequest) (*DownloadResponse, erro
 			}
 
 			if err == nil && result.Success {
-				resp := &DownloadResponse{
-					Success:          true,
-					Message:          "Downloaded from " + req.Source,
-					FilePath:         result.FilePath,
-					ActualBitDepth:   result.BitDepth,
-					ActualSampleRate: result.SampleRate,
-					Service:          req.Source,
-					Genre:            req.Genre,
-					Label:            req.Label,
-					Copyright:        req.Copyright,
-					DecryptionKey:    result.DecryptionKey,
-					Decryption:       normalizeDownloadDecryptionInfo(result.Decryption, result.DecryptionKey),
+				normalizedResult, alreadyExists := normalizeExtensionDownloadResult(result)
+				message := "Downloaded from " + req.Source
+				if alreadyExists {
+					message = "File already exists"
 				}
 
-				if req.EmbedMetadata && (req.Genre != "" || req.Label != "") && canEmbedGenreLabel(result.FilePath) {
-					if err := EmbedGenreLabel(result.FilePath, req.Genre, req.Label); err != nil {
-						GoLog("[DownloadWithExtensionFallback] Warning: failed to embed genre/label: %v\n", err)
-					} else {
-						GoLog("[DownloadWithExtensionFallback] Embedded genre=%q label=%q\n", req.Genre, req.Label)
-					}
-				} else if req.EmbedMetadata && (req.Genre != "" || req.Label != "") {
-					GoLog("[DownloadWithExtensionFallback] Skipping genre/label embed for non-local output path: %q\n", result.FilePath)
-				}
-
+				resp := buildDownloadSuccessResponse(
+					req,
+					normalizedResult,
+					req.Source,
+					message,
+					normalizedResult.FilePath,
+					alreadyExists,
+				)
+				overlayExtensionDownloadMetadata(&resp, result)
 				if ext.Manifest.SkipMetadataEnrichment {
 					resp.SkipMetadataEnrichment = true
-					if result.Title != "" {
-						resp.Title = result.Title
-					}
-					if result.Artist != "" {
-						resp.Artist = result.Artist
-					}
-					if result.Album != "" {
-						resp.Album = result.Album
-					}
-					if result.AlbumArtist != "" {
-						resp.AlbumArtist = result.AlbumArtist
-					}
-					if result.TrackNumber > 0 {
-						resp.TrackNumber = result.TrackNumber
-					}
-					if result.DiscNumber > 0 {
-						resp.DiscNumber = result.DiscNumber
-					}
-					if result.TotalTracks > 0 {
-						resp.TotalTracks = result.TotalTracks
-					}
-					if result.TotalDiscs > 0 {
-						resp.TotalDiscs = result.TotalDiscs
-					}
-					if result.ReleaseDate != "" {
-						resp.ReleaseDate = result.ReleaseDate
-					}
-					if result.CoverURL != "" {
-						resp.CoverURL = result.CoverURL
-					}
-					if result.ISRC != "" {
-						resp.ISRC = result.ISRC
-					}
-					if result.Genre != "" {
-						resp.Genre = result.Genre
-					}
-					if result.Label != "" {
-						resp.Label = result.Label
-					}
-					if result.Copyright != "" {
-						resp.Copyright = result.Copyright
-					}
-					if result.Composer != "" {
-						resp.Composer = result.Composer
-					}
-					if result.LyricsLRC != "" {
-						resp.LyricsLRC = result.LyricsLRC
-					}
 				}
+				applyExtensionRequestFallbacks(&resp, req)
 
 				if req.TrackName != "" && resp.Title == "" {
 					resp.Title = req.TrackName
@@ -1810,38 +1855,31 @@ func DownloadWithExtensionFallback(req DownloadRequest) (*DownloadResponse, erro
 				if req.ArtistName != "" && resp.Artist == "" {
 					resp.Artist = req.ArtistName
 				}
-				if req.AlbumName != "" && resp.Album == "" {
-					resp.Album = req.AlbumName
-				}
-				if req.AlbumArtist != "" && resp.AlbumArtist == "" {
-					resp.AlbumArtist = req.AlbumArtist
-				}
-				if req.ReleaseDate != "" && resp.ReleaseDate == "" {
-					resp.ReleaseDate = req.ReleaseDate
-				}
-				if req.ISRC != "" && resp.ISRC == "" {
-					resp.ISRC = req.ISRC
-				}
-				if req.TrackNumber > 0 && resp.TrackNumber == 0 {
-					resp.TrackNumber = req.TrackNumber
-				}
-				if req.DiscNumber > 0 && resp.DiscNumber == 0 {
-					resp.DiscNumber = req.DiscNumber
-				}
-				if req.TotalTracks > 0 && resp.TotalTracks == 0 {
-					resp.TotalTracks = req.TotalTracks
-				}
-				if req.TotalDiscs > 0 && resp.TotalDiscs == 0 {
-					resp.TotalDiscs = req.TotalDiscs
-				}
-				if req.CoverURL != "" && resp.CoverURL == "" {
-					resp.CoverURL = req.CoverURL
-				}
 				if req.Composer != "" && resp.Composer == "" {
 					resp.Composer = req.Composer
 				}
 
-				return resp, nil
+				if !alreadyExists && req.EmbedMetadata && (req.Genre != "" || req.Label != "") && canEmbedGenreLabel(normalizedResult.FilePath) {
+					if err := EmbedGenreLabel(normalizedResult.FilePath, req.Genre, req.Label); err != nil {
+						GoLog("[DownloadWithExtensionFallback] Warning: failed to embed genre/label: %v\n", err)
+					} else {
+						GoLog("[DownloadWithExtensionFallback] Embedded genre=%q label=%q\n", req.Genre, req.Label)
+					}
+				} else if !alreadyExists && req.EmbedMetadata && (req.Genre != "" || req.Label != "") {
+					GoLog("[DownloadWithExtensionFallback] Skipping genre/label embed for non-local output path: %q\n", normalizedResult.FilePath)
+				}
+
+				if !alreadyExists && !isFDOutput(req.OutputFD) && strings.TrimSpace(req.OutputDir) != "" {
+					indexISRC := strings.TrimSpace(resp.ISRC)
+					if indexISRC == "" {
+						indexISRC = strings.TrimSpace(req.ISRC)
+					}
+					if indexISRC != "" && strings.TrimSpace(resp.FilePath) != "" {
+						AddToISRCIndex(req.OutputDir, indexISRC, resp.FilePath)
+					}
+				}
+
+				return &resp, nil
 			}
 
 			if err != nil {
@@ -2003,84 +2041,47 @@ func DownloadWithExtensionFallback(req DownloadRequest) (*DownloadResponse, erro
 			}
 
 			if err == nil && result.Success {
-				resp := &DownloadResponse{
-					Success:          true,
-					Message:          "Downloaded from " + providerID,
-					FilePath:         result.FilePath,
-					ActualBitDepth:   result.BitDepth,
-					ActualSampleRate: result.SampleRate,
-					Service:          providerID,
-					Genre:            req.Genre,
-					Label:            req.Label,
-					Copyright:        req.Copyright,
-					DecryptionKey:    result.DecryptionKey,
-					Decryption:       normalizeDownloadDecryptionInfo(result.Decryption, result.DecryptionKey),
+				normalizedResult, alreadyExists := normalizeExtensionDownloadResult(result)
+				message := "Downloaded from " + providerID
+				if alreadyExists {
+					message = "File already exists"
 				}
 
-				if req.EmbedMetadata && (req.Genre != "" || req.Label != "") && canEmbedGenreLabel(result.FilePath) {
-					if err := EmbedGenreLabel(result.FilePath, req.Genre, req.Label); err != nil {
+				resp := buildDownloadSuccessResponse(
+					req,
+					normalizedResult,
+					providerID,
+					message,
+					normalizedResult.FilePath,
+					alreadyExists,
+				)
+				overlayExtensionDownloadMetadata(&resp, result)
+				if ext.Manifest.SkipMetadataEnrichment {
+					resp.SkipMetadataEnrichment = true
+				}
+				applyExtensionRequestFallbacks(&resp, req)
+
+				if !alreadyExists && req.EmbedMetadata && (req.Genre != "" || req.Label != "") && canEmbedGenreLabel(normalizedResult.FilePath) {
+					if err := EmbedGenreLabel(normalizedResult.FilePath, req.Genre, req.Label); err != nil {
 						GoLog("[DownloadWithExtensionFallback] Warning: failed to embed genre/label: %v\n", err)
 					} else {
 						GoLog("[DownloadWithExtensionFallback] Embedded genre=%q label=%q\n", req.Genre, req.Label)
 					}
-				} else if req.EmbedMetadata && (req.Genre != "" || req.Label != "") {
-					GoLog("[DownloadWithExtensionFallback] Skipping genre/label embed for non-local output path: %q\n", result.FilePath)
+				} else if !alreadyExists && req.EmbedMetadata && (req.Genre != "" || req.Label != "") {
+					GoLog("[DownloadWithExtensionFallback] Skipping genre/label embed for non-local output path: %q\n", normalizedResult.FilePath)
 				}
 
-				if ext.Manifest.SkipMetadataEnrichment {
-					resp.SkipMetadataEnrichment = true
-					if result.Title != "" {
-						resp.Title = result.Title
+				if !alreadyExists && !isFDOutput(req.OutputFD) && strings.TrimSpace(req.OutputDir) != "" {
+					indexISRC := strings.TrimSpace(resp.ISRC)
+					if indexISRC == "" {
+						indexISRC = strings.TrimSpace(req.ISRC)
 					}
-					if result.Artist != "" {
-						resp.Artist = result.Artist
-					}
-					if result.Album != "" {
-						resp.Album = result.Album
-					}
-					if result.AlbumArtist != "" {
-						resp.AlbumArtist = result.AlbumArtist
-					}
-					if result.TrackNumber > 0 {
-						resp.TrackNumber = result.TrackNumber
-					}
-					if result.DiscNumber > 0 {
-						resp.DiscNumber = result.DiscNumber
-					}
-					if result.ReleaseDate != "" {
-						resp.ReleaseDate = result.ReleaseDate
-					}
-					if result.CoverURL != "" {
-						resp.CoverURL = result.CoverURL
-					}
-					if result.ISRC != "" {
-						resp.ISRC = result.ISRC
+					if indexISRC != "" && strings.TrimSpace(resp.FilePath) != "" {
+						AddToISRCIndex(req.OutputDir, indexISRC, resp.FilePath)
 					}
 				}
 
-				if req.AlbumName != "" && resp.Album == "" {
-					resp.Album = req.AlbumName
-				}
-				if req.AlbumArtist != "" && resp.AlbumArtist == "" {
-					resp.AlbumArtist = req.AlbumArtist
-				}
-				if req.ReleaseDate != "" && resp.ReleaseDate == "" {
-					resp.ReleaseDate = req.ReleaseDate
-				}
-				if req.ISRC != "" && resp.ISRC == "" {
-					resp.ISRC = req.ISRC
-				}
-				if req.TrackNumber > 0 && resp.TrackNumber == 0 {
-					resp.TrackNumber = req.TrackNumber
-				}
-				if req.DiscNumber > 0 && resp.DiscNumber == 0 {
-					resp.DiscNumber = req.DiscNumber
-				}
-				if req.CoverURL != "" && resp.CoverURL == "" {
-					resp.CoverURL = req.CoverURL
-				}
-
-				return resp, nil
+				return &resp, nil
 			}
 
 			if err != nil {

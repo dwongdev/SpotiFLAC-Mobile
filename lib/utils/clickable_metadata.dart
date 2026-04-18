@@ -1,5 +1,6 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:spotiflac_android/l10n/l10n.dart';
 import 'package:spotiflac_android/services/platform_bridge.dart';
 import 'package:spotiflac_android/providers/extension_provider.dart';
 import 'package:spotiflac_android/screens/artist_screen.dart';
@@ -51,7 +52,7 @@ Future<void> navigateToArtist(
     return;
   }
 
-  _showLoadingSnackBar(context, 'Looking up artist...');
+  _showLoadingSnackBar(context, context.l10n.clickableLookingUpArtist);
   try {
     final artistList = await _searchDeezerExtension(
       artistName,
@@ -62,7 +63,7 @@ Future<void> navigateToArtist(
     ScaffoldMessenger.of(context).hideCurrentSnackBar();
 
     if (artistList.isEmpty) {
-      _showUnavailable(context, 'Artist');
+      _showUnavailable(context, context.l10n.trackArtist);
       return;
     }
 
@@ -82,7 +83,7 @@ Future<void> navigateToArtist(
     final resolvedImage = bestMatch['images'] as String?;
 
     if (resolvedId.isEmpty) {
-      _showUnavailable(context, 'Artist');
+      _showUnavailable(context, context.l10n.trackArtist);
       return;
     }
 
@@ -98,7 +99,7 @@ Future<void> navigateToArtist(
     _log.e('Failed to look up artist "$artistName": $e', e);
     if (!context.mounted) return;
     ScaffoldMessenger.of(context).hideCurrentSnackBar();
-    _showUnavailable(context, 'Artist');
+    _showUnavailable(context, context.l10n.trackArtist);
   }
 }
 
@@ -290,7 +291,9 @@ void _showLoadingSnackBar(BuildContext context, String message) {
 void _showUnavailable(BuildContext context, String type) {
   ScaffoldMessenger.of(
     context,
-  ).showSnackBar(SnackBar(content: Text('$type information not available')));
+  ).showSnackBar(
+    SnackBar(content: Text(context.l10n.clickableInformationUnavailable(type))),
+  );
 }
 
 class ClickableArtistName extends StatefulWidget {

@@ -21,8 +21,8 @@ class BuiltInService {
   });
 }
 
-const _builtInServices = [
-  BuiltInService(
+const _builtInServiceCatalog = {
+  'tidal': BuiltInService(
     id: 'tidal',
     label: 'Tidal',
     qualityOptions: [
@@ -43,7 +43,7 @@ const _builtInServices = [
       ),
     ],
   ),
-  BuiltInService(
+  'qobuz': BuiltInService(
     id: 'qobuz',
     label: 'Qobuz',
     qualityOptions: [
@@ -64,7 +64,7 @@ const _builtInServices = [
       ),
     ],
   ),
-];
+};
 
 class DownloadServicePicker extends ConsumerStatefulWidget {
   final String? trackName;
@@ -118,58 +118,93 @@ class DownloadServicePicker extends ConsumerStatefulWidget {
 class _DownloadServicePickerState extends ConsumerState<DownloadServicePicker> {
   late String _selectedService;
 
+  List<BuiltInService> _availableBuiltInServices() {
+    final availableIds = builtInDownloadProviderIds.toSet();
+    final services = <BuiltInService>[];
+    for (final id in availableIds) {
+      final service = _builtInServiceCatalog[id];
+      if (service != null) {
+        services.add(service);
+      }
+    }
+    return services;
+  }
+
+  List<Extension> _downloadExtensions() {
+    final extensionState = ref.read(extensionProvider);
+    return extensionState.extensions
+        .where((ext) => ext.enabled && ext.hasDownloadProvider)
+        .toList(growable: false);
+  }
+
+  bool _serviceExists(
+    String serviceId,
+    List<BuiltInService> builtInServices,
+    List<Extension> downloadExtensions,
+  ) {
+    if (serviceId.isEmpty) return false;
+    if (builtInServices.any((service) => service.id == serviceId)) return true;
+    return downloadExtensions.any((ext) => ext.id == serviceId);
+  }
+
   @override
   void initState() {
     super.initState();
+    final builtInServices = _availableBuiltInServices();
+    final downloadExtensions = _downloadExtensions();
     final recommended = widget.recommendedService;
-    if (recommended != null && recommended.isNotEmpty) {
+    if (recommended != null &&
+        _serviceExists(recommended, builtInServices, downloadExtensions)) {
       _selectedService = recommended;
     } else {
       _selectedService = ref.read(settingsProvider).defaultService;
     }
-    if (!_builtInServices.any((service) => service.id == _selectedService)) {
-      final extensionState = ref.read(extensionProvider);
-      final hasMatchingExtension = extensionState.extensions.any(
-        (ext) =>
-            ext.enabled &&
-            ext.hasDownloadProvider &&
-            ext.id == _selectedService,
-      );
-      if (!hasMatchingExtension) {
-        _selectedService = 'tidal';
-      }
+    if (!_serviceExists(
+      _selectedService,
+      builtInServices,
+      downloadExtensions,
+    )) {
+      _selectedService = builtInServices.isNotEmpty
+          ? builtInServices.first.id
+          : downloadExtensions.isNotEmpty
+          ? downloadExtensions.first.id
+          : '';
     }
   }
 
-  List<QualityOption> _getQualityOptions() {
-    final builtIn = _builtInServices
-        .where((s) => s.id == _selectedService)
+  List<QualityOption> _getQualityOptions(
+    List<BuiltInService> builtInServices,
+    List<Extension> downloadExtensions,
+  ) {
+    final builtIn = builtInServices
+        .where((service) => service.id == _selectedService)
         .firstOrNull;
     if (builtIn != null) {
       return builtIn.qualityOptions;
     }
 
-    final extensionState = ref.read(extensionProvider);
-    final ext = extensionState.extensions
+    final ext = downloadExtensions
         .where((e) => e.id == _selectedService)
         .firstOrNull;
     if (ext != null && ext.qualityOptions.isNotEmpty) {
       return ext.qualityOptions;
     }
 
-    return _builtInServices.firstWhere((s) => s.id == 'tidal').qualityOptions;
+    return const [];
   }
 
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    final extensionState = ref.watch(extensionProvider);
-
-    final downloadExtensions = extensionState.extensions
-        .where((ext) => ext.enabled && ext.hasDownloadProvider)
-        .toList();
-
-    final qualityOptions = _getQualityOptions();
+    ref.watch(extensionProvider);
+    final builtInServices = _availableBuiltInServices();
+    final downloadExtensions = _downloadExtensions();
+    final hasProviders =
+        builtInServices.isNotEmpty || downloadExtensions.isNotEmpty;
+    final qualityOptions = _getQualityOptions(
+      builtInServices,
+      downloadExtensions,
+    );
 
     return SafeArea(
       child: SingleChildScrollView(
@@ -213,68 +248,77 @@ class _DownloadServicePickerState extends ConsumerState<DownloadServicePicker> {
 
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: [
-                  for (final service in _builtInServices)
-                    _ServiceChip(
-                      label: service.isDisabled
-                          ? '${service.label} (${service.disabledReason})'
-                          : widget.recommendedService == service.id
-                          ? '${service.label} (Recommended)'
-                          : service.label,
-                      isSelected: _selectedService == service.id,
-                      isDisabled: service.isDisabled,
-                      onTap: service.isDisabled
-                          ? null
-                          : () => setState(() => _selectedService = service.id),
+              child: hasProviders
+                  ? Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: [
+                        for (final service in builtInServices)
+                          _ServiceChip(
+                            label: service.isDisabled
+                                ? '${service.label} (${service.disabledReason})'
+                                : widget.recommendedService == service.id
+                                ? '${service.label} (Recommended)'
+                                : service.label,
+                            isSelected: _selectedService == service.id,
+                            isDisabled: service.isDisabled,
+                            onTap: service.isDisabled
+                                ? null
+                                : () => setState(
+                                    () => _selectedService = service.id,
+                                  ),
+                          ),
+                        for (final ext in downloadExtensions)
+                          _ServiceChip(
+                            label: widget.recommendedService == ext.id
+                                ? '${ext.displayName} (Recommended)'
+                                : ext.displayName,
+                            isSelected: _selectedService == ext.id,
+                            onTap: () =>
+                                setState(() => _selectedService = ext.id),
+                            iconPath: ext.iconPath,
+                          ),
+                      ],
+                    )
+                  : _NoDownloadProviderHint(
+                      primaryText: context.l10n.extensionsNoDownloadProvider,
+                      secondaryText: context.l10n.storeAddRepoDescription,
                     ),
-                  for (final ext in downloadExtensions)
-                    _ServiceChip(
-                      label: widget.recommendedService == ext.id
-                          ? '${ext.displayName} (Recommended)'
-                          : ext.displayName,
-                      isSelected: _selectedService == ext.id,
-                      onTap: () => setState(() => _selectedService = ext.id),
-                      iconPath: ext.iconPath,
-                    ),
-                ],
-              ),
             ),
-
-            Padding(
-              padding: const EdgeInsets.fromLTRB(24, 16, 24, 8),
-              child: Text(
-                context.l10n.downloadSelectQuality,
-                style: Theme.of(
-                  context,
-                ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
-              ),
-            ),
-
-            if (_builtInServices.any((s) => s.id == _selectedService))
+            if (hasProviders) ...[
               Padding(
-                padding: const EdgeInsets.fromLTRB(24, 0, 24, 12),
+                padding: const EdgeInsets.fromLTRB(24, 16, 24, 8),
                 child: Text(
-                  context.l10n.qualityNote,
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: colorScheme.onSurfaceVariant,
-                    fontStyle: FontStyle.italic,
+                  context.l10n.downloadSelectQuality,
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
                   ),
                 ),
               ),
-
-            for (final quality in qualityOptions)
-              _QualityOption(
-                title: quality.label,
-                subtitle: quality.description ?? '',
-                icon: _getQualityIcon(quality.id),
-                onTap: () {
-                  Navigator.pop(context);
-                  widget.onSelect(quality.id, _selectedService);
-                },
-              ),
+              if (builtInServices.any(
+                (service) => service.id == _selectedService,
+              ))
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(24, 0, 24, 12),
+                  child: Text(
+                    context.l10n.qualityNote,
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: colorScheme.onSurfaceVariant,
+                      fontStyle: FontStyle.italic,
+                    ),
+                  ),
+                ),
+              for (final quality in qualityOptions)
+                _QualityOption(
+                  title: _localizedQualityLabel(context, quality),
+                  subtitle: _localizedQualityDescription(context, quality),
+                  icon: _getQualityIcon(quality.id),
+                  onTap: () {
+                    Navigator.pop(context);
+                    widget.onSelect(quality.id, _selectedService);
+                  },
+                ),
+            ],
 
             const SizedBox(height: 16),
           ],
@@ -301,6 +345,35 @@ class _DownloadServicePickerState extends ConsumerState<DownloadServicePicker> {
         return Icons.music_note;
       default:
         return Icons.music_note;
+    }
+  }
+
+  String _localizedQualityLabel(BuildContext context, QualityOption quality) {
+    switch (quality.id.toUpperCase()) {
+      case 'LOSSLESS':
+        return context.l10n.qualityFlacLossless;
+      case 'HI_RES':
+        return context.l10n.qualityHiResFlac;
+      case 'HI_RES_LOSSLESS':
+        return context.l10n.qualityHiResFlacMax;
+      default:
+        return quality.label;
+    }
+  }
+
+  String _localizedQualityDescription(
+    BuildContext context,
+    QualityOption quality,
+  ) {
+    switch (quality.id.toUpperCase()) {
+      case 'LOSSLESS':
+        return context.l10n.qualityFlacLosslessSubtitle;
+      case 'HI_RES':
+        return context.l10n.qualityHiResFlacSubtitle;
+      case 'HI_RES_LOSSLESS':
+        return context.l10n.qualityHiResFlacMaxSubtitle;
+      default:
+        return quality.description ?? '';
     }
   }
 }
@@ -416,6 +489,63 @@ class _ServiceChip extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _NoDownloadProviderHint extends StatelessWidget {
+  final String primaryText;
+  final String secondaryText;
+
+  const _NoDownloadProviderHint({
+    required this.primaryText,
+    required this.secondaryText,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.45),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: colorScheme.outlineVariant.withValues(alpha: 0.4),
+        ),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(
+            Icons.extension_outlined,
+            size: 18,
+            color: colorScheme.onSurfaceVariant,
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  primaryText,
+                  style: Theme.of(
+                    context,
+                  ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  secondaryText,
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }

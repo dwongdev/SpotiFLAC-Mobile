@@ -1165,10 +1165,18 @@ func DownloadWithFallback(requestJSON string) (string, error) {
 		return errorResponse("Download cancelled")
 	}
 
-	allServices := []string{"tidal", "qobuz"}
+	allServices := make([]string, 0, len(getBuiltInProviderSpecs()))
+	for _, spec := range getBuiltInProviderSpecs() {
+		if spec.SupportsDownload {
+			allServices = append(allServices, spec.ID)
+		}
+	}
+	if len(allServices) == 0 {
+		return errorResponse("No built-in download providers available")
+	}
 	preferredService := req.Service
 	if !isBuiltInDownloadProvider(preferredService) {
-		preferredService = "tidal"
+		preferredService = allServices[0]
 	}
 
 	GoLog("[DownloadWithFallback] Preferred service from request: '%s'\n", req.Service)
@@ -1947,21 +1955,6 @@ func ClearTrackIDCache() {
 	ClearTrackCache()
 }
 
-func SearchTidalAll(query string, trackLimit, artistLimit int, filter string) (string, error) {
-	downloader := NewTidalDownloader()
-	results, err := downloader.SearchAll(query, trackLimit, artistLimit, filter)
-	if err != nil {
-		return "", err
-	}
-
-	jsonBytes, err := json.Marshal(results)
-	if err != nil {
-		return "", err
-	}
-
-	return string(jsonBytes), nil
-}
-
 func SearchQobuzAll(query string, trackLimit, artistLimit int, filter string) (string, error) {
 	downloader := NewQobuzDownloader()
 	results, err := downloader.SearchAll(query, trackLimit, artistLimit, filter)
@@ -2249,7 +2242,7 @@ func getExtensionProviderMetadataResponse(
 			"artist_info": map[string]interface{}{
 				"id":           artist.ID,
 				"name":         artist.Name,
-				"images":       tidalFirstNonEmpty(artist.HeaderImage, artist.ImageURL),
+				"images":       firstNonEmptyTrimmed(artist.HeaderImage, artist.ImageURL),
 				"cover_url":    artist.ImageURL,
 				"header_image": artist.HeaderImage,
 				"provider_id":  artist.ProviderID,
@@ -2284,34 +2277,13 @@ func getExtensionProviderMetadataResponse(
 	}
 }
 
-func GetTidalMetadata(resourceType, resourceID string) (string, error) {
-	downloader := NewTidalDownloader()
-
-	var data interface{}
-	var err error
-
-	switch resourceType {
-	case "track":
-		data, err = downloader.GetTrackMetadata(resourceID)
-	case "album":
-		data, err = downloader.GetAlbumMetadata(resourceID)
-	case "artist":
-		data, err = downloader.GetArtistMetadata(resourceID)
-	case "playlist":
-		data, err = downloader.GetPlaylistMetadata(resourceID)
-	default:
-		return "", fmt.Errorf("unsupported Tidal resource type: %s", resourceType)
+func firstNonEmptyTrimmed(values ...string) string {
+	for _, value := range values {
+		if trimmed := strings.TrimSpace(value); trimmed != "" {
+			return trimmed
+		}
 	}
-	if err != nil {
-		return "", err
-	}
-
-	jsonBytes, err := json.Marshal(data)
-	if err != nil {
-		return "", err
-	}
-
-	return string(jsonBytes), nil
+	return ""
 }
 
 func GetProviderMetadataJSON(providerID, resourceType, resourceID string) (string, error) {
@@ -2380,25 +2352,6 @@ func ParseQobuzURLExport(url string) (string, error) {
 	return string(jsonBytes), nil
 }
 
-func ParseTidalURLExport(url string) (string, error) {
-	resourceType, resourceID, err := parseTidalURL(url)
-	if err != nil {
-		return "", err
-	}
-
-	result := map[string]string{
-		"type": resourceType,
-		"id":   resourceID,
-	}
-
-	jsonBytes, err := json.Marshal(result)
-	if err != nil {
-		return "", err
-	}
-
-	return string(jsonBytes), nil
-}
-
 func ParseProviderURLJSON(url string) (string, error) {
 	parsers := []struct {
 		providerID string
@@ -2406,7 +2359,6 @@ func ParseProviderURLJSON(url string) (string, error) {
 	}{
 		{providerID: "deezer", parse: parseDeezerURL},
 		{providerID: "qobuz", parse: parseQobuzURL},
-		{providerID: "tidal", parse: parseTidalURL},
 	}
 
 	for _, parser := range parsers {
@@ -2429,32 +2381,6 @@ func ParseProviderURLJSON(url string) (string, error) {
 	}
 
 	return "", fmt.Errorf("unsupported provider URL")
-}
-
-func ConvertTidalToSpotifyDeezer(tidalURL string) (string, error) {
-	client := NewSongLinkClient()
-	availability, err := client.CheckAvailabilityFromURL(tidalURL)
-	if err != nil {
-		return "", err
-	}
-
-	result := map[string]string{
-		"spotify_id":  availability.SpotifyID,
-		"deezer_id":   availability.DeezerID,
-		"deezer_url":  availability.DeezerURL,
-		"spotify_url": "",
-	}
-
-	if availability.SpotifyID != "" {
-		result["spotify_url"] = "https://open.spotify.com/track/" + availability.SpotifyID
-	}
-
-	jsonBytes, err := json.Marshal(result)
-	if err != nil {
-		return "", err
-	}
-
-	return string(jsonBytes), nil
 }
 
 func GetDeezerExtendedMetadata(trackID string) (string, error) {

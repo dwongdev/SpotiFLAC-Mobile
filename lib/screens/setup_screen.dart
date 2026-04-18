@@ -749,7 +749,7 @@ class _SetupScreenState extends ConsumerState<SetupScreen> {
                   overflow: TextOverflow.ellipsis,
                 ),
                 trailing: IconButton(
-                  tooltip: 'Change folder',
+                  tooltip: context.l10n.setupChangeFolderTooltip,
                   icon: const Icon(Icons.edit),
                   onPressed: _selectDirectory,
                 ),

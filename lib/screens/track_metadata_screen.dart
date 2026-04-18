@@ -6037,7 +6037,7 @@ class _EditMetadataSheetState extends State<_EditMetadataSheet> {
               const LinearProgressIndicator(minHeight: 2)
             else if (!hasCurrentCover)
               Text(
-                'No embedded album art found',
+                context.l10n.trackCoverNoEmbeddedArt,
                 style: Theme.of(
                   context,
                 ).textTheme.bodySmall?.copyWith(color: cs.onSurfaceVariant),
@@ -6050,14 +6050,16 @@ class _EditMetadataSheetState extends State<_EditMetadataSheet> {
                     onPressed: _saving ? null : _pickCoverImage,
                     icon: const Icon(Icons.image_outlined),
                     label: Text(
-                      hasSelectedCover ? 'Replace Cover' : 'Pick Cover',
+                      hasSelectedCover
+                          ? context.l10n.trackCoverReplace
+                          : context.l10n.trackCoverPick,
                     ),
                   ),
                 ),
                 if (hasSelectedCover) ...[
                   const SizedBox(width: 8),
                   IconButton(
-                    tooltip: 'Clear selected cover',
+                    tooltip: context.l10n.trackCoverClearSelected,
                     onPressed: _saving
                         ? null
                         : () async {
@@ -6079,7 +6081,7 @@ class _EditMetadataSheetState extends State<_EditMetadataSheet> {
                       child: _buildCoverPreviewTile(
                         cs: cs,
                         path: _currentCoverPath!,
-                        label: 'Current cover',
+                        label: context.l10n.trackCoverCurrent,
                       ),
                     ),
                   if (hasCurrentCover && hasSelectedCover)
@@ -6089,7 +6091,9 @@ class _EditMetadataSheetState extends State<_EditMetadataSheet> {
                       child: _buildCoverPreviewTile(
                         cs: cs,
                         path: _selectedCoverPath!,
-                        label: _selectedCoverName ?? 'Selected cover',
+                        label:
+                            _selectedCoverName ??
+                            context.l10n.trackCoverSelected,
                       ),
                     ),
                 ],
@@ -6097,7 +6101,7 @@ class _EditMetadataSheetState extends State<_EditMetadataSheet> {
               if (hasSelectedCover) ...[
                 const SizedBox(height: 8),
                 Text(
-                  'The selected cover will replace the current embedded cover when you tap Save.',
+                  context.l10n.trackCoverReplaceNotice,
                   style: Theme.of(
                     context,
                   ).textTheme.bodySmall?.copyWith(color: cs.onSurfaceVariant),

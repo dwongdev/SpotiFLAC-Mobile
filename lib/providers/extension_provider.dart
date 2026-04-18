@@ -211,6 +211,20 @@ class Extension {
   bool get hasPostProcessing => postProcessing?.enabled ?? false;
   bool get hasHomeFeed => capabilities['homeFeed'] == true;
   bool get hasBrowseCategories => capabilities['browseCategories'] == true;
+  List<String> get replacesBuiltInProviders {
+    final value = capabilities['replacesBuiltInProviders'];
+    if (value is! List) return const [];
+
+    final normalized = <String>[];
+    for (final item in value) {
+      if (item is! String) continue;
+      final trimmed = item.trim().toLowerCase();
+      if (trimmed.isEmpty || normalized.contains(trimmed)) continue;
+      normalized.add(trimmed);
+    }
+    return normalized;
+  }
+
   String? get preferredDownloadOutputExtension {
     final value = capabilities['downloadOutputExtension'];
     if (value is! String) return null;
@@ -743,6 +757,8 @@ class ExtensionNotifier extends Notifier<ExtensionState> {
       final extensions = list.map((e) => Extension.fromJson(e)).toList();
       state = state.copyWith(extensions: extensions);
       await _reconcileDownloadProviderPriority();
+      await _reconcileDefaultDownloadService();
+      _reconcileSearchProvider();
       _log.d('Loaded ${extensions.length} extensions');
 
       for (final ext in extensions) {
@@ -849,6 +865,8 @@ class ExtensionNotifier extends Notifier<ExtensionState> {
 
       state = state.copyWith(extensions: extensions);
       await _reconcileDownloadProviderPriority();
+      await _reconcileDefaultDownloadService();
+      _reconcileSearchProvider();
 
       if (!enabled && ext != null) {
         final settings = ref.read(settingsProvider);
@@ -861,16 +879,16 @@ class ExtensionNotifier extends Notifier<ExtensionState> {
         }
 
         if (ext.hasDownloadProvider && settings.defaultService == extensionId) {
-          final availableProviders = getAllDownloadProviders();
-          if (availableProviders.isNotEmpty) {
-            final fallbackService = availableProviders.first;
-            ref
-                .read(settingsProvider.notifier)
-                .setDefaultService(fallbackService);
-            _log.d(
-              'Reset default service to $fallbackService because extension $extensionId was disabled',
-            );
-          }
+          final fallbackService =
+              _firstEnabledExtensionDownloadProviderId() ?? '';
+          ref
+              .read(settingsProvider.notifier)
+              .setDefaultService(fallbackService);
+          _log.d(
+            fallbackService.isEmpty
+                ? 'Cleared default service because extension $extensionId was disabled'
+                : 'Reset default service to $fallbackService because extension $extensionId was disabled',
+          );
         }
       }
     } catch (e) {
@@ -894,6 +912,142 @@ class ExtensionNotifier extends Notifier<ExtensionState> {
     await PlatformBridge.setProviderPriority(sanitized);
     state = state.copyWith(providerPriority: sanitized);
     _log.d('Reconciled provider priority after extension update: $sanitized');
+  }
+
+  String? _firstEnabledExtensionDownloadProviderId() {
+    return state.extensions
+        .where((ext) => ext.enabled && ext.hasDownloadProvider)
+        .map((ext) => ext.id)
+        .firstOrNull;
+  }
+
+  String? replacedBuiltInDownloadProviderFor(String providerId) {
+    final normalized = providerId.trim().toLowerCase();
+    if (normalized.isEmpty) return null;
+
+    return state.extensions
+        .where(
+          (ext) =>
+              ext.enabled &&
+              ext.hasDownloadProvider &&
+              ext.replacesBuiltInProviders.contains(normalized),
+        )
+        .map((ext) => ext.id)
+        .firstOrNull;
+  }
+
+  String? replacedBuiltInSearchProviderFor(String providerId) {
+    final normalized = providerId.trim().toLowerCase();
+    if (normalized.isEmpty) return null;
+
+    return state.extensions
+        .where(
+          (ext) =>
+              ext.enabled &&
+              ext.hasCustomSearch &&
+              ext.replacesBuiltInProviders.contains(normalized),
+        )
+        .map((ext) => ext.id)
+        .firstOrNull;
+  }
+
+  bool downloadProviderMatchesBuiltIn(
+    String providerId,
+    String builtInProviderId,
+  ) {
+    final normalizedProvider = providerId.trim().toLowerCase();
+    final normalizedBuiltIn = builtInProviderId.trim().toLowerCase();
+    if (normalizedProvider.isEmpty || normalizedBuiltIn.isEmpty) return false;
+    if (normalizedProvider == normalizedBuiltIn) return true;
+
+    final extension = state.extensions
+        .where((ext) => ext.enabled && ext.hasDownloadProvider)
+        .where((ext) => ext.id.toLowerCase() == normalizedProvider)
+        .firstOrNull;
+    return extension?.replacesBuiltInProviders.contains(normalizedBuiltIn) ??
+        false;
+  }
+
+  Future<void> _reconcileDefaultDownloadService() async {
+    final settings = ref.read(settingsProvider);
+    final preferredExtensionId = _firstEnabledExtensionDownloadProviderId();
+    final currentService = settings.defaultService.trim();
+
+    if (currentService.isEmpty) {
+      if (preferredExtensionId != null) {
+        ref
+            .read(settingsProvider.notifier)
+            .setDefaultService(preferredExtensionId);
+        _log.d(
+          'Adopted first enabled download extension as default service: $preferredExtensionId',
+        );
+      }
+      return;
+    }
+
+    final replacementExtensionId = replacedBuiltInDownloadProviderFor(
+      currentService,
+    );
+    if (replacementExtensionId != null) {
+      ref
+          .read(settingsProvider.notifier)
+          .setDefaultService(replacementExtensionId);
+      _log.d(
+        'Migrated retired built-in service $currentService to $replacementExtensionId',
+      );
+      return;
+    }
+
+    final currentExtension = state.extensions
+        .where((ext) => ext.id == currentService)
+        .firstOrNull;
+    final isMissingOrInvalidExtension =
+        currentExtension == null ||
+        !currentExtension.enabled ||
+        !currentExtension.hasDownloadProvider;
+    if (!isBuiltInDownloadProvider(currentService) &&
+        isMissingOrInvalidExtension) {
+      final fallbackService = preferredExtensionId ?? '';
+      ref.read(settingsProvider.notifier).setDefaultService(fallbackService);
+      _log.d(
+        fallbackService.isEmpty
+            ? 'Cleared default service because $currentService is no longer available'
+            : 'Reset default service to $fallbackService because $currentService is no longer available',
+      );
+    }
+  }
+
+  void _reconcileSearchProvider() {
+    final settings = ref.read(settingsProvider);
+    final currentSearchProvider = settings.searchProvider?.trim();
+    if (currentSearchProvider == null || currentSearchProvider.isEmpty) {
+      return;
+    }
+
+    final replacementExtensionId = replacedBuiltInSearchProviderFor(
+      currentSearchProvider,
+    );
+    if (replacementExtensionId != null) {
+      ref
+          .read(settingsProvider.notifier)
+          .setSearchProvider(replacementExtensionId);
+      _log.d(
+        'Migrated retired built-in search provider $currentSearchProvider to $replacementExtensionId',
+      );
+      return;
+    }
+
+    final hasMatchingExtension = state.extensions.any(
+      (ext) =>
+          ext.enabled && ext.hasCustomSearch && ext.id == currentSearchProvider,
+    );
+    if (!isBuiltInSearchProvider(currentSearchProvider) &&
+        !hasMatchingExtension) {
+      ref.read(settingsProvider.notifier).setSearchProvider(null);
+      _log.d(
+        'Cleared stale search provider because $currentSearchProvider is no longer available',
+      );
+    }
   }
 
   Future<bool> ensureSpotifyWebExtensionReady({

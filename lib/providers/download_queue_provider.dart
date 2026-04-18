@@ -1455,6 +1455,10 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
           final decoded = jsonDecode(itemJson);
           if (decoded is! Map) continue;
           var item = DownloadItem.fromJson(Map<String, dynamic>.from(decoded));
+          final normalizedService = _normalizeQueuedService(item.service);
+          if (normalizedService != item.service) {
+            item = item.copyWith(service: normalizedService);
+          }
           if (item.status == DownloadStatus.downloading) {
             item = item.copyWith(status: DownloadStatus.queued, progress: 0);
           }
@@ -2395,7 +2399,8 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
     if (extensionPreferred != null) {
       return extensionPreferred;
     }
-    if (service.toLowerCase() == 'tidal' && quality == 'HIGH') {
+    if (_usesBuiltInCompatibleDownloadProvider(service, 'tidal') &&
+        quality == 'HIGH') {
       return '.m4a';
     }
     final q = quality.toLowerCase();
@@ -2403,6 +2408,49 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
     if (q.startsWith('opus')) return '.opus';
     if (q.startsWith('mp3')) return '.mp3';
     return '.flac';
+  }
+
+  bool _usesBuiltInCompatibleDownloadProvider(
+    String service,
+    String builtInProviderId,
+  ) {
+    return ref
+        .read(extensionProvider.notifier)
+        .downloadProviderMatchesBuiltIn(service, builtInProviderId);
+  }
+
+  String _normalizeQueuedService(String service) {
+    final normalized = service.trim();
+    if (normalized.isEmpty) {
+      return normalized;
+    }
+
+    final replacement = ref
+        .read(extensionProvider.notifier)
+        .replacedBuiltInDownloadProviderFor(normalized);
+    if (replacement != null && replacement.isNotEmpty) {
+      return replacement;
+    }
+
+    return normalized;
+  }
+
+  bool _hasActiveDownloadProvider(String service) {
+    final normalized = service.trim();
+    if (normalized.isEmpty) {
+      return false;
+    }
+    if (isBuiltInDownloadProvider(normalized)) {
+      return true;
+    }
+
+    final extensionState = ref.read(extensionProvider);
+    return extensionState.extensions.any(
+      (ext) =>
+          ext.enabled &&
+          ext.hasDownloadProvider &&
+          ext.id.toLowerCase() == normalized.toLowerCase(),
+    );
   }
 
   String _mimeTypeForExt(String ext) {
@@ -2837,7 +2885,7 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
     final item = DownloadItem(
       id: id,
       track: track,
-      service: service,
+      service: _normalizeQueuedService(service),
       createdAt: DateTime.now(),
       qualityOverride: qualityOverride,
       playlistName: playlistName,
@@ -2869,7 +2917,7 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
       return DownloadItem(
         id: id,
         track: track,
-        service: service,
+        service: _normalizeQueuedService(service),
         createdAt: DateTime.now(),
         qualityOverride: qualityOverride,
         playlistName: playlistName,
@@ -4388,6 +4436,31 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
   }
 
   Future<void> _downloadSingleItem(DownloadItem item) async {
+    final normalizedService = _normalizeQueuedService(item.service);
+    if (normalizedService != item.service) {
+      item = item.copyWith(service: normalizedService);
+      state = state.copyWith(
+        items: [
+          for (final existing in state.items)
+            if (existing.id == item.id) item else existing,
+        ],
+        currentDownload: state.currentDownload?.id == item.id
+            ? item
+            : state.currentDownload,
+      );
+      _saveQueueToStorage();
+    }
+
+    if (!_hasActiveDownloadProvider(item.service)) {
+      updateItemStatus(
+        item.id,
+        DownloadStatus.failed,
+        error: 'Download provider is no longer available',
+        errorType: DownloadErrorType.notFound,
+      );
+      return;
+    }
+
     _log.d('Processing: ${item.track.name} by ${item.track.artistName}');
     _log.d('Cover URL: ${item.track.coverUrl}');
     var pausedDuringThisRun = false;
@@ -4748,7 +4821,7 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
         }
         if (trackToDownload.id.startsWith('tidal:')) {
           payloadTidalId = trackToDownload.id.substring(6);
-          if (item.service == 'tidal') {
+          if (_usesBuiltInCompatibleDownloadProvider(item.service, 'tidal')) {
             payloadSpotifyId = '';
           }
         }
@@ -5051,7 +5124,7 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
             !wasExisting &&
             isContentUriPath &&
             effectiveSafMode &&
-            actualService == 'tidal' &&
+            _usesBuiltInCompatibleDownloadProvider(actualService, 'tidal') &&
             filePath.endsWith('.flac') &&
             (mimeType == null || mimeType.contains('flac'));
 

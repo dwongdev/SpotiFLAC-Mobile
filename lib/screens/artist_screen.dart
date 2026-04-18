@@ -1689,8 +1689,8 @@ class _ArtistScreenState extends ConsumerState<ArtistScreen> {
       button: true,
       selected: _isSelectionMode && isSelected,
       label: _isSelectionMode
-          ? 'Select album ${album.name}'
-          : 'Open album ${album.name}',
+          ? context.l10n.a11ySelectAlbum(album.name)
+          : context.l10n.a11yOpenAlbum(album.name),
       child: GestureDetector(
         onTap: () {
           if (_isSelectionMode) {

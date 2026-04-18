@@ -166,6 +166,18 @@ abstract class AppLocalizations {
   /// **'Paste a supported URL or search by name'**
   String get homeSubtitle;
 
+  /// Title shown on home when no providers are available yet
+  ///
+  /// In en, this message translates to:
+  /// **'Home is empty'**
+  String get homeEmptyTitle;
+
+  /// Subtitle shown on home when no providers are available yet
+  ///
+  /// In en, this message translates to:
+  /// **'Install your first extension to unlock search and browsing.'**
+  String get homeEmptySubtitle;
+
   /// Info text about supported URL types
   ///
   /// In en, this message translates to:
@@ -5844,6 +5856,364 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Could not download update. Try again later.'**
   String get notifUpdateFailedBody;
+
+  /// Search filter label - tracks
+  ///
+  /// In en, this message translates to:
+  /// **'Tracks'**
+  String get searchTracks;
+
+  /// Default placeholder for the main search field on Home
+  ///
+  /// In en, this message translates to:
+  /// **'Paste supported URL or search...'**
+  String get homeSearchHintDefault;
+
+  /// Placeholder for the main search field when a provider is selected
+  ///
+  /// In en, this message translates to:
+  /// **'Search with {providerName}...'**
+  String homeSearchHintProvider(String providerName);
+
+  /// Tooltip for importing a CSV file into Home search
+  ///
+  /// In en, this message translates to:
+  /// **'Import CSV'**
+  String get homeImportCsvTooltip;
+
+  /// Tooltip for the Home search provider picker
+  ///
+  /// In en, this message translates to:
+  /// **'Change search provider'**
+  String get homeChangeSearchProviderTooltip;
+
+  /// Generic action - paste from clipboard
+  ///
+  /// In en, this message translates to:
+  /// **'Paste'**
+  String get actionPaste;
+
+  /// Placeholder for the search screen input
+  ///
+  /// In en, this message translates to:
+  /// **'Search tracks...'**
+  String get searchTracksHint;
+
+  /// Empty-state prompt on the search screen
+  ///
+  /// In en, this message translates to:
+  /// **'Search for tracks'**
+  String get searchTracksEmptyPrompt;
+
+  /// Placeholder shown in the tutorial search demo
+  ///
+  /// In en, this message translates to:
+  /// **'Paste or search...'**
+  String get tutorialSearchHint;
+
+  /// Accessibility label for completed download state in tutorial demo
+  ///
+  /// In en, this message translates to:
+  /// **'Download completed'**
+  String get tutorialDownloadCompletedSemantics;
+
+  /// Accessibility label for active download state in tutorial demo
+  ///
+  /// In en, this message translates to:
+  /// **'Download in progress'**
+  String get tutorialDownloadInProgressSemantics;
+
+  /// Accessibility label for idle download button in tutorial demo
+  ///
+  /// In en, this message translates to:
+  /// **'Start download'**
+  String get tutorialStartDownloadSemantics;
+
+  /// Settings toggle title for writing metadata into downloaded files
+  ///
+  /// In en, this message translates to:
+  /// **'Embed Metadata'**
+  String get optionsEmbedMetadata;
+
+  /// Subtitle when metadata embedding is enabled
+  ///
+  /// In en, this message translates to:
+  /// **'Write metadata, cover art, and embedded lyrics to files'**
+  String get optionsEmbedMetadataSubtitleOn;
+
+  /// Subtitle when metadata embedding is disabled
+  ///
+  /// In en, this message translates to:
+  /// **'Disabled (advanced): skip all metadata embedding'**
+  String get optionsEmbedMetadataSubtitleOff;
+
+  /// Subtitle for max quality cover when metadata embedding is disabled
+  ///
+  /// In en, this message translates to:
+  /// **'Disabled when metadata embedding is off'**
+  String get optionsMaxQualityCoverSubtitleDisabled;
+
+  /// Example placeholder for the download filename format input
+  ///
+  /// In en, this message translates to:
+  /// **'{artist} - {title}'**
+  String downloadFilenameHintExample(Object artist, Object title);
+
+  /// Message shown when a track file has no embedded cover art
+  ///
+  /// In en, this message translates to:
+  /// **'No embedded album art found'**
+  String get trackCoverNoEmbeddedArt;
+
+  /// Button label for replacing selected cover art
+  ///
+  /// In en, this message translates to:
+  /// **'Replace Cover'**
+  String get trackCoverReplace;
+
+  /// Button label for selecting cover art
+  ///
+  /// In en, this message translates to:
+  /// **'Pick Cover'**
+  String get trackCoverPick;
+
+  /// Tooltip for clearing the newly selected cover art
+  ///
+  /// In en, this message translates to:
+  /// **'Clear selected cover'**
+  String get trackCoverClearSelected;
+
+  /// Label for the currently embedded cover preview
+  ///
+  /// In en, this message translates to:
+  /// **'Current cover'**
+  String get trackCoverCurrent;
+
+  /// Label for the newly selected cover preview
+  ///
+  /// In en, this message translates to:
+  /// **'Selected cover'**
+  String get trackCoverSelected;
+
+  /// Notice shown when a new cover has been selected but not saved yet
+  ///
+  /// In en, this message translates to:
+  /// **'The selected cover will replace the current embedded cover when you tap Save.'**
+  String get trackCoverReplaceNotice;
+
+  /// Generic action - stop
+  ///
+  /// In en, this message translates to:
+  /// **'Stop'**
+  String get actionStop;
+
+  /// Accessibility label for a queue item that is finalizing
+  ///
+  /// In en, this message translates to:
+  /// **'Finalizing download'**
+  String get queueFinalizingDownload;
+
+  /// Accessibility label when a downloaded file is missing from disk
+  ///
+  /// In en, this message translates to:
+  /// **'Downloaded file missing'**
+  String get queueDownloadedFileMissing;
+
+  /// Accessibility label for completed download state in queue
+  ///
+  /// In en, this message translates to:
+  /// **'Download completed'**
+  String get queueDownloadCompleted;
+
+  /// Accessibility label for picking an accent color
+  ///
+  /// In en, this message translates to:
+  /// **'Select accent color {hex}'**
+  String appearanceSelectAccentColor(String hex);
+
+  /// Tooltip when auto-scroll is enabled on the log screen
+  ///
+  /// In en, this message translates to:
+  /// **'Auto-scroll ON'**
+  String get logAutoScrollOn;
+
+  /// Tooltip when auto-scroll is disabled on the log screen
+  ///
+  /// In en, this message translates to:
+  /// **'Auto-scroll OFF'**
+  String get logAutoScrollOff;
+
+  /// Tooltip for copying logs
+  ///
+  /// In en, this message translates to:
+  /// **'Copy logs'**
+  String get logCopyLogs;
+
+  /// Tooltip for clearing the log search field
+  ///
+  /// In en, this message translates to:
+  /// **'Clear search'**
+  String get logClearSearch;
+
+  /// Diagnostic badge label when ISP blocking is detected
+  ///
+  /// In en, this message translates to:
+  /// **'ISP BLOCKING DETECTED'**
+  String get logIssueIspBlockingLabel;
+
+  /// Diagnostic badge description for ISP blocking
+  ///
+  /// In en, this message translates to:
+  /// **'Your ISP may be blocking access to download services'**
+  String get logIssueIspBlockingDescription;
+
+  /// Diagnostic badge suggestion for ISP blocking
+  ///
+  /// In en, this message translates to:
+  /// **'Try using a VPN or change DNS to 1.1.1.1 or 8.8.8.8'**
+  String get logIssueIspBlockingSuggestion;
+
+  /// Diagnostic badge label when the service rate limits requests
+  ///
+  /// In en, this message translates to:
+  /// **'RATE LIMITED'**
+  String get logIssueRateLimitedLabel;
+
+  /// Diagnostic badge description for rate limiting
+  ///
+  /// In en, this message translates to:
+  /// **'Too many requests to the service'**
+  String get logIssueRateLimitedDescription;
+
+  /// Diagnostic badge suggestion for rate limiting
+  ///
+  /// In en, this message translates to:
+  /// **'Wait a few minutes before trying again'**
+  String get logIssueRateLimitedSuggestion;
+
+  /// Diagnostic badge label for generic network errors
+  ///
+  /// In en, this message translates to:
+  /// **'NETWORK ERROR'**
+  String get logIssueNetworkErrorLabel;
+
+  /// Diagnostic badge description for generic network errors
+  ///
+  /// In en, this message translates to:
+  /// **'Connection issues detected'**
+  String get logIssueNetworkErrorDescription;
+
+  /// Diagnostic badge suggestion for generic network errors
+  ///
+  /// In en, this message translates to:
+  /// **'Check your internet connection'**
+  String get logIssueNetworkErrorSuggestion;
+
+  /// Diagnostic badge label when a track is unavailable
+  ///
+  /// In en, this message translates to:
+  /// **'TRACK NOT FOUND'**
+  String get logIssueTrackNotFoundLabel;
+
+  /// Diagnostic badge description when a track is unavailable
+  ///
+  /// In en, this message translates to:
+  /// **'Some tracks could not be found on download services'**
+  String get logIssueTrackNotFoundDescription;
+
+  /// Diagnostic badge suggestion when a track is unavailable
+  ///
+  /// In en, this message translates to:
+  /// **'The track may not be available in lossless quality'**
+  String get logIssueTrackNotFoundSuggestion;
+
+  /// Snackbar shown while clickable artist metadata is being resolved
+  ///
+  /// In en, this message translates to:
+  /// **'Looking up artist...'**
+  String get clickableLookingUpArtist;
+
+  /// Snackbar shown when clickable metadata cannot open a destination
+  ///
+  /// In en, this message translates to:
+  /// **'{type} information not available'**
+  String clickableInformationUnavailable(String type);
+
+  /// Section title for extension tags
+  ///
+  /// In en, this message translates to:
+  /// **'Tags'**
+  String get extensionDetailsTags;
+
+  /// Section title for extension metadata information
+  ///
+  /// In en, this message translates to:
+  /// **'Information'**
+  String get extensionDetailsInformation;
+
+  /// Capability label for utility-only extensions
+  ///
+  /// In en, this message translates to:
+  /// **'Utility Functions'**
+  String get extensionUtilityFunctions;
+
+  /// Generic action - dismiss
+  ///
+  /// In en, this message translates to:
+  /// **'Dismiss'**
+  String get actionDismiss;
+
+  /// Tooltip for editing the selected download folder
+  ///
+  /// In en, this message translates to:
+  /// **'Change folder'**
+  String get setupChangeFolderTooltip;
+
+  /// Accessibility label for opening a track item
+  ///
+  /// In en, this message translates to:
+  /// **'Open track {trackName} by {artistName}'**
+  String a11yOpenTrackByArtist(String trackName, String artistName);
+
+  /// Accessibility label for opening a generic item
+  ///
+  /// In en, this message translates to:
+  /// **'Open {itemType} {name}'**
+  String a11yOpenItem(String itemType, String name);
+
+  /// Accessibility label for opening a grouped item with count
+  ///
+  /// In en, this message translates to:
+  /// **'Open {title}, {count} {count, plural, =1{item} other{items}}'**
+  String a11yOpenItemCount(String title, int count);
+
+  /// Accessibility label for opening an album item with track count
+  ///
+  /// In en, this message translates to:
+  /// **'Open album {albumName} by {artistName}, {trackCount} tracks'**
+  String a11yOpenAlbumByArtistTrackCount(
+    String albumName,
+    String artistName,
+    int trackCount,
+  );
+
+  /// Accessibility label for a queue or list track item
+  ///
+  /// In en, this message translates to:
+  /// **'{trackName} by {artistName}'**
+  String a11yTrackByArtist(String trackName, String artistName);
+
+  /// Accessibility label for selecting an album
+  ///
+  /// In en, this message translates to:
+  /// **'Select album {albumName}'**
+  String a11ySelectAlbum(String albumName);
+
+  /// Accessibility label for opening an album
+  ///
+  /// In en, this message translates to:
+  /// **'Open album {albumName}'**
+  String a11yOpenAlbum(String albumName);
 }
 
 class _AppLocalizationsDelegate

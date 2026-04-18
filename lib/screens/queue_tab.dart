@@ -3537,7 +3537,7 @@ class _QueueTabState extends ConsumerState<QueueTab> {
                             prefixIcon: const Icon(Icons.search),
                             suffixIcon: _searchQuery.isNotEmpty
                                 ? IconButton(
-                                    tooltip: 'Clear',
+                                    tooltip: context.l10n.dialogClear,
                                     icon: const Icon(Icons.clear),
                                     onPressed: () {
                                       _searchController.clear();
@@ -3954,7 +3954,7 @@ class _QueueTabState extends ConsumerState<QueueTab> {
 
     return Semantics(
       button: true,
-      label: 'Open $title, $count ${count == 1 ? 'item' : 'items'}',
+      label: context.l10n.a11yOpenItemCount(title, count),
       child: GestureDetector(
         onTap: onTap,
         onLongPress: onLongPress,
@@ -4909,7 +4909,11 @@ class _QueueTabState extends ConsumerState<QueueTab> {
   }) {
     return Semantics(
       button: true,
-      label: 'Open album $albumName by $artistName, $trackCount tracks',
+      label: context.l10n.a11yOpenAlbumByArtistTrackCount(
+        albumName,
+        artistName,
+        trackCount,
+      ),
       child: GestureDetector(
         onTap: onTap,
         child: Column(
@@ -6444,7 +6448,7 @@ class _QueueTabState extends ConsumerState<QueueTab> {
           onPressed: () =>
               ref.read(downloadQueueProvider.notifier).cancelItem(item.id),
           icon: Icon(Icons.close, color: colorScheme.error),
-          tooltip: 'Cancel',
+          tooltip: context.l10n.dialogCancel,
           style: IconButton.styleFrom(
             backgroundColor: colorScheme.errorContainer.withValues(alpha: 0.3),
           ),
@@ -6454,14 +6458,14 @@ class _QueueTabState extends ConsumerState<QueueTab> {
           onPressed: () =>
               ref.read(downloadQueueProvider.notifier).cancelItem(item.id),
           icon: Icon(Icons.stop, color: colorScheme.error),
-          tooltip: 'Stop',
+          tooltip: context.l10n.actionStop,
           style: IconButton.styleFrom(
             backgroundColor: colorScheme.errorContainer.withValues(alpha: 0.3),
           ),
         );
       case DownloadStatus.finalizing:
         return Semantics(
-          label: 'Finalizing download',
+          label: context.l10n.queueFinalizingDownload,
           child: SizedBox(
             width: 40,
             height: 40,
@@ -6500,7 +6504,7 @@ class _QueueTabState extends ConsumerState<QueueTab> {
                       coverUrl: item.track.coverUrl ?? '',
                     ),
                     icon: Icon(Icons.play_arrow, color: colorScheme.primary),
-                    tooltip: 'Play',
+                    tooltip: context.l10n.tooltipPlay,
                     style: IconButton.styleFrom(
                       backgroundColor: colorScheme.primaryContainer.withValues(
                         alpha: 0.3,
@@ -6509,7 +6513,7 @@ class _QueueTabState extends ConsumerState<QueueTab> {
                   )
                 else
                   Semantics(
-                    label: 'Downloaded file missing',
+                    label: context.l10n.queueDownloadedFileMissing,
                     child: ExcludeSemantics(
                       child: Icon(
                         Icons.error_outline,
@@ -6520,7 +6524,7 @@ class _QueueTabState extends ConsumerState<QueueTab> {
                   ),
                 const SizedBox(width: 4),
                 Semantics(
-                  label: 'Download completed',
+                  label: context.l10n.queueDownloadCompleted,
                   child: ExcludeSemantics(
                     child: Container(
                       padding: const EdgeInsets.all(8),
@@ -6549,7 +6553,7 @@ class _QueueTabState extends ConsumerState<QueueTab> {
               onPressed: () =>
                   ref.read(downloadQueueProvider.notifier).retryItem(item.id),
               icon: Icon(Icons.refresh, color: colorScheme.primary),
-              tooltip: 'Retry',
+              tooltip: context.l10n.dialogRetry,
               style: IconButton.styleFrom(
                 backgroundColor: colorScheme.primaryContainer.withValues(
                   alpha: 0.3,
@@ -6566,7 +6570,7 @@ class _QueueTabState extends ConsumerState<QueueTab> {
                     ? colorScheme.error
                     : colorScheme.onSurfaceVariant,
               ),
-              tooltip: 'Remove',
+              tooltip: context.l10n.dialogRemove,
               style: item.status == DownloadStatus.failed
                   ? IconButton.styleFrom(
                       backgroundColor: colorScheme.errorContainer.withValues(
@@ -6743,7 +6747,10 @@ class _QueueTabState extends ConsumerState<QueueTab> {
         : colorScheme.onSecondaryContainer;
 
     return Semantics(
-      label: '${item.trackName} by ${item.artistName}',
+      label: context.l10n.a11yTrackByArtist(
+        item.trackName,
+        item.artistName,
+      ),
       selected: isSelected,
       child: Card(
         margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),

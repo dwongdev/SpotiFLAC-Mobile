@@ -390,6 +390,81 @@ func (r *extensionRuntime) RegisterGoBackendAPIs(vm *goja.Runtime) {
 		})
 	})
 
+	obj.Set("getLyricsLRC", func(call goja.FunctionCall) goja.Value {
+		if len(call.Arguments) < 3 {
+			return vm.ToValue(map[string]interface{}{
+				"error": "spotifyID, trackName, and artistName are required",
+			})
+		}
+
+		spotifyID := strings.TrimSpace(call.Arguments[0].String())
+		trackName := strings.TrimSpace(call.Arguments[1].String())
+		artistName := strings.TrimSpace(call.Arguments[2].String())
+		filePath := ""
+		if len(call.Arguments) > 3 && !goja.IsUndefined(call.Arguments[3]) && !goja.IsNull(call.Arguments[3]) {
+			filePath = strings.TrimSpace(call.Arguments[3].String())
+		}
+		var durationMs int64
+		if len(call.Arguments) > 4 && !goja.IsUndefined(call.Arguments[4]) && !goja.IsNull(call.Arguments[4]) {
+			durationMs = call.Arguments[4].ToInteger()
+		}
+
+		lyrics, err := GetLyricsLRC(spotifyID, trackName, artistName, filePath, durationMs)
+		if err != nil {
+			return vm.ToValue(map[string]interface{}{
+				"error": err.Error(),
+			})
+		}
+
+		return vm.ToValue(map[string]interface{}{
+			"lyrics": lyrics,
+		})
+	})
+
+	obj.Set("checkISRCExists", func(call goja.FunctionCall) goja.Value {
+		if len(call.Arguments) < 2 {
+			return vm.ToValue(map[string]interface{}{
+				"error": "outputDir and isrc are required",
+			})
+		}
+
+		outputDir := strings.TrimSpace(call.Arguments[0].String())
+		isrc := strings.TrimSpace(call.Arguments[1].String())
+		if outputDir == "" || isrc == "" {
+			return vm.ToValue(map[string]interface{}{
+				"error": "outputDir and isrc are required",
+			})
+		}
+
+		filePath, exists := checkISRCExistsInternal(outputDir, isrc)
+		return vm.ToValue(map[string]interface{}{
+			"exists":   exists,
+			"filePath": filePath,
+		})
+	})
+
+	obj.Set("addToISRCIndex", func(call goja.FunctionCall) goja.Value {
+		if len(call.Arguments) < 3 {
+			return vm.ToValue(map[string]interface{}{
+				"error": "outputDir, isrc, and filePath are required",
+			})
+		}
+
+		outputDir := strings.TrimSpace(call.Arguments[0].String())
+		isrc := strings.TrimSpace(call.Arguments[1].String())
+		filePath := strings.TrimSpace(call.Arguments[2].String())
+		if outputDir == "" || isrc == "" || filePath == "" {
+			return vm.ToValue(map[string]interface{}{
+				"error": "outputDir, isrc, and filePath are required",
+			})
+		}
+
+		AddToISRCIndex(outputDir, isrc, filePath)
+		return vm.ToValue(map[string]interface{}{
+			"success": true,
+		})
+	})
+
 	obj.Set("buildFilename", func(call goja.FunctionCall) goja.Value {
 		if len(call.Arguments) < 2 {
 			return vm.ToValue("")

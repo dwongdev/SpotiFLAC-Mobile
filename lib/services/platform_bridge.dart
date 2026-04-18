@@ -547,22 +547,6 @@ class PlatformBridge {
     return jsonDecode(result as String) as Map<String, dynamic>;
   }
 
-  static Future<Map<String, dynamic>> getTidalMetadata(
-    String resourceType,
-    String resourceId,
-  ) async {
-    final result = await _channel.invokeMethod('getTidalMetadata', {
-      'resource_type': resourceType,
-      'resource_id': resourceId,
-    });
-    if (result == null) {
-      throw Exception(
-        'getTidalMetadata returned null for $resourceType:$resourceId',
-      );
-    }
-    return jsonDecode(result as String) as Map<String, dynamic>;
-  }
-
   static Future<Map<String, dynamic>> getProviderMetadata(
     String providerId,
     String resourceType,
@@ -578,15 +562,6 @@ class PlatformBridge {
         'getProviderMetadata returned null for $providerId:$resourceType:$resourceId',
       );
     }
-    return jsonDecode(result as String) as Map<String, dynamic>;
-  }
-
-  static Future<Map<String, dynamic>> convertTidalToSpotifyDeezer(
-    String tidalUrl,
-  ) async {
-    final result = await _channel.invokeMethod('convertTidalToSpotifyDeezer', {
-      'url': tidalUrl,
-    });
     return jsonDecode(result as String) as Map<String, dynamic>;
   }
 

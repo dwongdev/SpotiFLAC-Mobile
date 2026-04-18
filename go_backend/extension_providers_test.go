@@ -11,9 +11,9 @@ func TestSetMetadataProviderPriorityPreservesExplicitProvidersOnly(t *testing.T)
 	original := GetMetadataProviderPriority()
 	defer SetMetadataProviderPriority(original)
 
-	SetMetadataProviderPriority([]string{"tidal"})
+	SetMetadataProviderPriority([]string{"qobuz"})
 	got := GetMetadataProviderPriority()
-	want := []string{"tidal"}
+	want := []string{"qobuz"}
 	if len(got) != len(want) {
 		t.Fatalf("unexpected priority length: got %v want %v", got, want)
 	}
@@ -28,7 +28,7 @@ func TestSetExtensionFallbackProviderIDsSkipsBuiltInsAndDuplicates(t *testing.T)
 	original := GetExtensionFallbackProviderIDs()
 	defer SetExtensionFallbackProviderIDs(original)
 
-	SetExtensionFallbackProviderIDs([]string{"ext-a", "tidal", "ext-a", " ext-b "})
+	SetExtensionFallbackProviderIDs([]string{"ext-a", "qobuz", "ext-a", " ext-b "})
 
 	got := GetExtensionFallbackProviderIDs()
 	want := []string{"ext-a", "ext-b"}
@@ -255,7 +255,7 @@ func TestSearchTracksWithMetadataProvidersUsesPriorityAndDedupes(t *testing.T) {
 		searchBuiltInMetadataTracksFunc = originalSearch
 	}()
 
-	SetMetadataProviderPriority([]string{"qobuz", "tidal"})
+	SetMetadataProviderPriority([]string{"qobuz"})
 
 	var calls []string
 	searchBuiltInMetadataTracksFunc = func(providerID, query string, limit int) ([]ExtTrackMetadata, error) {
@@ -264,11 +264,8 @@ func TestSearchTracksWithMetadataProvidersUsesPriorityAndDedupes(t *testing.T) {
 		case "qobuz":
 			return []ExtTrackMetadata{
 				{ProviderID: "qobuz", SpotifyID: "qobuz:1", ISRC: "AAA111", Name: "First"},
-			}, nil
-		case "tidal":
-			return []ExtTrackMetadata{
-				{ProviderID: "tidal", SpotifyID: "tidal:2", ISRC: "AAA111", Name: "Duplicate"},
-				{ProviderID: "tidal", SpotifyID: "tidal:3", ISRC: "BBB222", Name: "Second"},
+				{ProviderID: "qobuz", SpotifyID: "qobuz:2", ISRC: "AAA111", Name: "Duplicate"},
+				{ProviderID: "qobuz", SpotifyID: "qobuz:3", ISRC: "BBB222", Name: "Second"},
 			}, nil
 		default:
 			return nil, nil
@@ -283,10 +280,10 @@ func TestSearchTracksWithMetadataProvidersUsesPriorityAndDedupes(t *testing.T) {
 	if len(tracks) != 2 {
 		t.Fatalf("unexpected track count: got %d want 2", len(tracks))
 	}
-	if tracks[0].ProviderID != "qobuz" || tracks[1].ProviderID != "tidal" {
+	if tracks[0].ProviderID != "qobuz" || tracks[1].ProviderID != "qobuz" {
 		t.Fatalf("unexpected track provider order: %+v", tracks)
 	}
-	if len(calls) != 2 || calls[0] != "qobuz" || calls[1] != "tidal" {
+	if len(calls) != 1 || calls[0] != "qobuz" {
 		t.Fatalf("unexpected provider call order: %v", calls)
 	}
 }

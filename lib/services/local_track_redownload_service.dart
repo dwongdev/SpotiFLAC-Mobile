@@ -108,7 +108,7 @@ class LocalTrackRedownloadService {
       case 'deezer':
         return settings.defaultService.toLowerCase();
       default:
-        return 'tidal';
+        return '';
     }
   }
 

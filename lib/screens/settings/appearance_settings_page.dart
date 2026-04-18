@@ -358,7 +358,7 @@ class _ColorPalettePicker extends StatelessWidget {
             child: Semantics(
               button: true,
               selected: isSelected,
-              label: 'Select accent color $colorHex',
+              label: context.l10n.appearanceSelectAccentColor(colorHex),
               child: GestureDetector(
                 onTap: () => onColorSelected(color),
                 child: _ColorPaletteItem(color: color, isSelected: isSelected),

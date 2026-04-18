@@ -12,13 +12,18 @@ import 'package:spotiflac_android/utils/logger.dart';
 
 const _settingsKey = 'app_settings';
 const _migrationVersionKey = 'settings_migration_version';
-const _currentMigrationVersion = 10;
+const _currentMigrationVersion = 11;
 const _spotifyClientSecretKey = 'spotify_client_secret';
 final _log = AppLogger('SettingsProvider');
 
 class SettingsNotifier extends Notifier<AppSettings> {
   static final RegExp _isoRegionPattern = RegExp(r'^[A-Z]{2}$');
-  static const Set<String> _searchTabValues = {'all', 'track', 'artist', 'album'};
+  static const Set<String> _searchTabValues = {
+    'all',
+    'track',
+    'artist',
+    'album',
+  };
 
   final Future<SharedPreferences> _prefs = SharedPreferences.getInstance();
   final FlutterSecureStorage _secureStorage = const FlutterSecureStorage();
@@ -137,10 +142,11 @@ class SettingsNotifier extends Notifier<AppSettings> {
         );
       }
       state = state.copyWith(lastSeenVersion: AppInfo.version);
-      // Migration 7/10: retired built-in services reset back to Tidal
+      // Migration 7/11: retired built-in services no longer fall back to a
+      // preinstalled provider.
       if (state.defaultService == 'youtube' ||
           state.defaultService == 'deezer') {
-        state = state.copyWith(defaultService: 'tidal');
+        state = state.copyWith(defaultService: '');
       }
       await prefs.setInt(_migrationVersionKey, _currentMigrationVersion);
       await _saveSettings();

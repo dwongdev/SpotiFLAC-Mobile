@@ -160,12 +160,14 @@ class _LogScreenState extends State<LogScreen> {
                         ? Icons.vertical_align_bottom
                         : Icons.vertical_align_center,
                   ),
-                  tooltip: _autoScroll ? 'Auto-scroll ON' : 'Auto-scroll OFF',
+                  tooltip: _autoScroll
+                      ? context.l10n.logAutoScrollOn
+                      : context.l10n.logAutoScrollOff,
                   onPressed: () => setState(() => _autoScroll = !_autoScroll),
                 ),
                 IconButton(
                   icon: const Icon(Icons.copy),
-                  tooltip: 'Copy logs',
+                  tooltip: context.l10n.logCopyLogs,
                   onPressed: _copyLogs,
                 ),
                 PopupMenuButton<String>(
@@ -327,7 +329,7 @@ class _LogScreenState extends State<LogScreen> {
                               fillColor: colorScheme.surfaceContainerHighest,
                               suffixIcon: _searchQuery.isNotEmpty
                                   ? IconButton(
-                                      tooltip: 'Clear search',
+                                      tooltip: context.l10n.logClearSearch,
                                       icon: const Icon(Icons.clear, size: 20),
                                       onPressed: () {
                                         _searchController.clear();
@@ -609,11 +611,9 @@ class _LogSummaryCard extends StatelessWidget {
               if (analysis.hasISPBlocking) ...[
                 _IssueBadge(
                   icon: Icons.block,
-                  label: 'ISP BLOCKING DETECTED',
-                  description:
-                      'Your ISP may be blocking access to download services',
-                  suggestion:
-                      'Try using a VPN or change DNS to 1.1.1.1 or 8.8.8.8',
+                  label: context.l10n.logIssueIspBlockingLabel,
+                  description: context.l10n.logIssueIspBlockingDescription,
+                  suggestion: context.l10n.logIssueIspBlockingSuggestion,
                   color: colorScheme.error,
                   domains: analysis.blockedDomains,
                 ),
@@ -623,9 +623,9 @@ class _LogSummaryCard extends StatelessWidget {
               if (analysis.hasRateLimit) ...[
                 _IssueBadge(
                   icon: Icons.speed,
-                  label: 'RATE LIMITED',
-                  description: 'Too many requests to the service',
-                  suggestion: 'Wait a few minutes before trying again',
+                  label: context.l10n.logIssueRateLimitedLabel,
+                  description: context.l10n.logIssueRateLimitedDescription,
+                  suggestion: context.l10n.logIssueRateLimitedSuggestion,
                   color: Colors.orange,
                 ),
                 const SizedBox(height: 8),
@@ -634,9 +634,9 @@ class _LogSummaryCard extends StatelessWidget {
               if (analysis.hasNetworkError && !analysis.hasISPBlocking) ...[
                 _IssueBadge(
                   icon: Icons.wifi_off,
-                  label: 'NETWORK ERROR',
-                  description: 'Connection issues detected',
-                  suggestion: 'Check your internet connection',
+                  label: context.l10n.logIssueNetworkErrorLabel,
+                  description: context.l10n.logIssueNetworkErrorDescription,
+                  suggestion: context.l10n.logIssueNetworkErrorSuggestion,
                   color: colorScheme.tertiary,
                 ),
                 const SizedBox(height: 8),
@@ -645,11 +645,9 @@ class _LogSummaryCard extends StatelessWidget {
               if (analysis.hasNotFound) ...[
                 _IssueBadge(
                   icon: Icons.search_off,
-                  label: 'TRACK NOT FOUND',
-                  description:
-                      'Some tracks could not be found on download services',
-                  suggestion:
-                      'The track may not be available in lossless quality',
+                  label: context.l10n.logIssueTrackNotFoundLabel,
+                  description: context.l10n.logIssueTrackNotFoundDescription,
+                  suggestion: context.l10n.logIssueTrackNotFoundSuggestion,
                   color: colorScheme.onSurfaceVariant,
                 ),
               ],

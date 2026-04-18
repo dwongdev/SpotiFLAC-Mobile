@@ -44,13 +44,18 @@ class _ExtensionDetailsScreenState
           _buildDescription(context, liveExtension, colorScheme),
 
           if (liveExtension.tags.isNotEmpty) ...[
-            _buildSectionHeader(context, 'Tags', Icons.tag, colorScheme),
+            _buildSectionHeader(
+              context,
+              context.l10n.extensionDetailsTags,
+              Icons.tag,
+              colorScheme,
+            ),
             _buildTags(context, liveExtension, colorScheme),
           ],
 
           _buildSectionHeader(
             context,
-            'Information',
+            context.l10n.extensionDetailsInformation,
             Icons.table_chart_outlined,
             colorScheme,
           ),
@@ -438,7 +443,7 @@ class _ExtensionDetailsScreenState
               ),
               _CapabilityRow(
                 icon: Icons.build,
-                label: 'Utility Functions',
+                label: context.l10n.extensionUtilityFunctions,
                 enabled: isUtility,
                 colorScheme: colorScheme,
                 isLast: true,

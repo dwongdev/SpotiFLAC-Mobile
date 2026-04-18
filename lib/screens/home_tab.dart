@@ -431,6 +431,7 @@ class _HomeTabState extends ConsumerState<HomeTab>
   }
 
   List<SearchFilter> _resolveSearchFilters(
+    BuildContext context,
     String? currentSearchProvider,
     List<Extension> extensions,
   ) {
@@ -453,11 +454,27 @@ class _HomeTabState extends ConsumerState<HomeTab>
       }
     }
 
-    return const [
-      SearchFilter(id: 'track', label: 'Tracks', icon: 'music'),
-      SearchFilter(id: 'artist', label: 'Artists', icon: 'artist'),
-      SearchFilter(id: 'album', label: 'Albums', icon: 'album'),
-      SearchFilter(id: 'playlist', label: 'Playlists', icon: 'playlist'),
+    return [
+      SearchFilter(
+        id: 'track',
+        label: context.l10n.searchTracks,
+        icon: 'music',
+      ),
+      SearchFilter(
+        id: 'artist',
+        label: context.l10n.searchArtists,
+        icon: 'artist',
+      ),
+      SearchFilter(
+        id: 'album',
+        label: context.l10n.searchAlbums,
+        icon: 'album',
+      ),
+      SearchFilter(
+        id: 'playlist',
+        label: context.l10n.searchPlaylists,
+        icon: 'playlist',
+      ),
     ];
   }
 
@@ -1249,9 +1266,13 @@ class _HomeTabState extends ConsumerState<HomeTab>
     final hasSearchedBefore = ref.watch(
       settingsProvider.select((s) => s.hasSearchedBefore),
     );
+    final explicitSearchProvider = ref.watch(
+      settingsProvider.select((s) => s.searchProvider),
+    );
     final defaultSearchTab = ref.watch(
       settingsProvider.select((s) => s.defaultSearchTab),
     );
+    final extensions = ref.watch(extensionProvider.select((s) => s.extensions));
 
     final hasExploreContent = ref.watch(
       exploreProvider.select((s) => s.sections.isNotEmpty),
@@ -1289,6 +1310,9 @@ class _HomeTabState extends ConsumerState<HomeTab>
         recentModeRequested &&
         (!hasSearchInput || hasShortSearchInput || !hasActualResults) &&
         !isLoading;
+    final hasSearchProvider =
+        (_resolveSearchProvider(explicitSearchProvider, extensions) ?? '')
+            .isNotEmpty;
     final hasResults =
         hasSearchInput || hasActualResults || isLoading || showRecentAccess;
     final showExplore =
@@ -1298,6 +1322,12 @@ class _HomeTabState extends ConsumerState<HomeTab>
         !homeFeedDisabled &&
         (hasHomeFeedExtension || hasExploreContent) &&
         hasExploreContent;
+    final showEmptyHomeState =
+        !hasSearchProvider &&
+        !hasHomeFeedExtension &&
+        !hasExploreContent &&
+        !hasResults &&
+        historyItems.isEmpty;
 
     ref.listen<String>(settingsProvider.select((s) => s.defaultSearchTab), (
       previous,
@@ -1413,13 +1443,17 @@ class _HomeTabState extends ConsumerState<HomeTab>
                             ),
                             const SizedBox(height: 16),
                             Text(
-                              'SpotiFLAC',
+                              showEmptyHomeState
+                                  ? context.l10n.homeEmptyTitle
+                                  : 'SpotiFLAC Mobile',
                               style: Theme.of(context).textTheme.headlineSmall
                                   ?.copyWith(fontWeight: FontWeight.bold),
                             ),
                             const SizedBox(height: 8),
                             Text(
-                              context.l10n.homeSubtitle,
+                              showEmptyHomeState
+                                  ? context.l10n.homeEmptySubtitle
+                                  : context.l10n.homeSubtitle,
                               textAlign: TextAlign.center,
                               style: Theme.of(context).textTheme.bodyMedium
                                   ?.copyWith(
@@ -1431,17 +1465,18 @@ class _HomeTabState extends ConsumerState<HomeTab>
                 ),
               ),
 
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: EdgeInsets.fromLTRB(
-                    16,
-                    (hasResults || showExplore) ? 8 : 32,
-                    16,
-                    (hasResults || showExplore) ? 8 : 16,
+              if (hasSearchProvider)
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: EdgeInsets.fromLTRB(
+                      16,
+                      (hasResults || showExplore) ? 8 : 32,
+                      16,
+                      (hasResults || showExplore) ? 8 : 16,
+                    ),
+                    child: _buildSearchBar(colorScheme),
                   ),
-                  child: _buildSearchBar(colorScheme),
                 ),
-              ),
 
               if (hasActualResults && !showRecentAccess)
                 Consumer(
@@ -1456,6 +1491,7 @@ class _HomeTabState extends ConsumerState<HomeTab>
                       trackProvider.select((s) => s.selectedSearchFilter),
                     );
                     final searchFilters = _resolveSearchFilters(
+                      context,
                       currentSearchProvider,
                       extensions,
                     );
@@ -1493,7 +1529,11 @@ class _HomeTabState extends ConsumerState<HomeTab>
                 child: AnimatedSize(
                   duration: const Duration(milliseconds: 250),
                   curve: Curves.easeOut,
-                  child: (hasResults || showRecentAccess || showExplore)
+                  child:
+                      (hasResults ||
+                          showRecentAccess ||
+                          showExplore ||
+                          showEmptyHomeState)
                       ? const SizedBox.shrink()
                       : Column(
                           children: [
@@ -1666,7 +1706,10 @@ class _HomeTabState extends ConsumerState<HomeTab>
                 key: ValueKey(item.id),
                 child: Semantics(
                   button: true,
-                  label: 'Open track ${item.trackName} by ${item.artistName}',
+                  label: context.l10n.a11yOpenTrackByArtist(
+                    item.trackName,
+                    item.artistName,
+                  ),
                   child: GestureDetector(
                     onTap: () => _navigateToMetadataScreen(
                       item,
@@ -1810,7 +1853,7 @@ class _HomeTabState extends ConsumerState<HomeTab>
 
     return Semantics(
       button: true,
-      label: 'Open ${item.type} ${item.name}',
+      label: context.l10n.a11yOpenItem(item.type, item.name),
       child: GestureDetector(
         onTap: () => _navigateToExploreItem(item),
         child: SizedBox(
@@ -2294,7 +2337,7 @@ class _HomeTabState extends ConsumerState<HomeTab>
                 ),
               ),
               IconButton(
-                tooltip: 'Dismiss',
+                tooltip: context.l10n.actionDismiss,
                 icon: Icon(
                   Icons.close,
                   size: 20,
@@ -3341,13 +3384,13 @@ class _HomeTabState extends ConsumerState<HomeTab>
     );
 
     if (!extState.isInitialized) {
-      return 'Paste supported URL or search...';
+      return context.l10n.homeSearchHintDefault;
     }
 
     if (searchProvider != null && searchProvider.isNotEmpty) {
       final builtIn = builtInProviderSpecForId(searchProvider);
       if (builtIn != null && builtIn.supportsSearch) {
-        return 'Search with ${builtIn.displayName}...';
+        return context.l10n.homeSearchHintProvider(builtIn.displayName);
       }
 
       final ext = extState.extensions
@@ -3357,10 +3400,10 @@ class _HomeTabState extends ConsumerState<HomeTab>
         if (ext.searchBehavior?.placeholder != null) {
           return ext.searchBehavior!.placeholder!;
         }
-        return 'Search with ${ext.displayName}...';
+        return context.l10n.homeSearchHintProvider(ext.displayName);
       }
     }
-    return 'Paste supported URL or search...';
+    return context.l10n.homeSearchHintDefault;
   }
 
   Widget _buildSearchFilterBar(
@@ -3481,7 +3524,7 @@ class _HomeTabState extends ConsumerState<HomeTab>
               IconButton(
                 icon: const Icon(Icons.clear),
                 onPressed: _clearAndRefresh,
-                tooltip: 'Clear',
+                tooltip: context.l10n.dialogClear,
               )
             else ...[
               IconButton(
@@ -3489,12 +3532,12 @@ class _HomeTabState extends ConsumerState<HomeTab>
                 onPressed: _isCsvImporting
                     ? null
                     : () => _importCsv(context, ref),
-                tooltip: 'Import CSV',
+                tooltip: context.l10n.homeImportCsvTooltip,
               ),
               IconButton(
                 icon: const Icon(Icons.paste),
                 onPressed: _pasteFromClipboard,
-                tooltip: 'Paste',
+                tooltip: context.l10n.actionPaste,
               ),
             ],
           ],
@@ -3640,7 +3683,7 @@ class _SearchProviderDropdown extends ConsumerWidget {
             ),
           ],
         ),
-        tooltip: 'Change search provider',
+        tooltip: context.l10n.homeChangeSearchProviderTooltip,
         offset: const Offset(0, 40),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         onSelected: (String providerId) {

@@ -70,7 +70,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
           controller: _searchController,
           style: TextStyle(color: colorScheme.onSurface),
           decoration: InputDecoration(
-            hintText: 'Search tracks...',
+            hintText: context.l10n.searchTracksHint,
             hintStyle: TextStyle(color: colorScheme.onSurfaceVariant),
             border: InputBorder.none,
             enabledBorder: InputBorder.none,
@@ -124,7 +124,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
           Icon(Icons.search, size: 64, color: colorScheme.onSurfaceVariant),
           const SizedBox(height: 16),
           Text(
-            'Search for tracks',
+            context.l10n.searchTracksEmptyPrompt,
             style: Theme.of(context).textTheme.bodyLarge?.copyWith(
               color: colorScheme.onSurfaceVariant,
             ),
@@ -194,7 +194,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
         children: [
           IconButton(
             icon: const Icon(Icons.download_rounded),
-            tooltip: 'Download',
+            tooltip: context.l10n.dialogDownload,
             onPressed: () => _downloadTrack(track),
           ),
         ],

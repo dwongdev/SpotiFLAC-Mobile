@@ -30,6 +30,13 @@ class AppLocalizationsNl extends AppLocalizations {
   String get homeSubtitle => 'Paste a Spotify link or search by name';
 
   @override
+  String get homeEmptyTitle => 'Home is empty';
+
+  @override
+  String get homeEmptySubtitle =>
+      'Install your first extension to unlock search and browsing.';
+
+  @override
   String get homeSupports => 'Supports: Track, Album, Playlist, Artist URLs';
 
   @override
@@ -3423,4 +3430,223 @@ class AppLocalizationsNl extends AppLocalizations {
   @override
   String get notifUpdateFailedBody =>
       'Could not download update. Try again later.';
+
+  @override
+  String get searchTracks => 'Tracks';
+
+  @override
+  String get homeSearchHintDefault => 'Paste supported URL or search...';
+
+  @override
+  String homeSearchHintProvider(String providerName) {
+    return 'Search with $providerName...';
+  }
+
+  @override
+  String get homeImportCsvTooltip => 'Import CSV';
+
+  @override
+  String get homeChangeSearchProviderTooltip => 'Change search provider';
+
+  @override
+  String get actionPaste => 'Paste';
+
+  @override
+  String get searchTracksHint => 'Search tracks...';
+
+  @override
+  String get searchTracksEmptyPrompt => 'Search for tracks';
+
+  @override
+  String get tutorialSearchHint => 'Paste or search...';
+
+  @override
+  String get tutorialDownloadCompletedSemantics => 'Download completed';
+
+  @override
+  String get tutorialDownloadInProgressSemantics => 'Download in progress';
+
+  @override
+  String get tutorialStartDownloadSemantics => 'Start download';
+
+  @override
+  String get optionsEmbedMetadata => 'Embed Metadata';
+
+  @override
+  String get optionsEmbedMetadataSubtitleOn =>
+      'Write metadata, cover art, and embedded lyrics to files';
+
+  @override
+  String get optionsEmbedMetadataSubtitleOff =>
+      'Disabled (advanced): skip all metadata embedding';
+
+  @override
+  String get optionsMaxQualityCoverSubtitleDisabled =>
+      'Disabled when metadata embedding is off';
+
+  @override
+  String downloadFilenameHintExample(Object artist, Object title) {
+    return '$artist - $title';
+  }
+
+  @override
+  String get trackCoverNoEmbeddedArt => 'No embedded album art found';
+
+  @override
+  String get trackCoverReplace => 'Replace Cover';
+
+  @override
+  String get trackCoverPick => 'Pick Cover';
+
+  @override
+  String get trackCoverClearSelected => 'Clear selected cover';
+
+  @override
+  String get trackCoverCurrent => 'Current cover';
+
+  @override
+  String get trackCoverSelected => 'Selected cover';
+
+  @override
+  String get trackCoverReplaceNotice =>
+      'The selected cover will replace the current embedded cover when you tap Save.';
+
+  @override
+  String get actionStop => 'Stop';
+
+  @override
+  String get queueFinalizingDownload => 'Finalizing download';
+
+  @override
+  String get queueDownloadedFileMissing => 'Downloaded file missing';
+
+  @override
+  String get queueDownloadCompleted => 'Download completed';
+
+  @override
+  String appearanceSelectAccentColor(String hex) {
+    return 'Select accent color $hex';
+  }
+
+  @override
+  String get logAutoScrollOn => 'Auto-scroll ON';
+
+  @override
+  String get logAutoScrollOff => 'Auto-scroll OFF';
+
+  @override
+  String get logCopyLogs => 'Copy logs';
+
+  @override
+  String get logClearSearch => 'Clear search';
+
+  @override
+  String get logIssueIspBlockingLabel => 'ISP BLOCKING DETECTED';
+
+  @override
+  String get logIssueIspBlockingDescription =>
+      'Your ISP may be blocking access to download services';
+
+  @override
+  String get logIssueIspBlockingSuggestion =>
+      'Try using a VPN or change DNS to 1.1.1.1 or 8.8.8.8';
+
+  @override
+  String get logIssueRateLimitedLabel => 'RATE LIMITED';
+
+  @override
+  String get logIssueRateLimitedDescription =>
+      'Too many requests to the service';
+
+  @override
+  String get logIssueRateLimitedSuggestion =>
+      'Wait a few minutes before trying again';
+
+  @override
+  String get logIssueNetworkErrorLabel => 'NETWORK ERROR';
+
+  @override
+  String get logIssueNetworkErrorDescription => 'Connection issues detected';
+
+  @override
+  String get logIssueNetworkErrorSuggestion => 'Check your internet connection';
+
+  @override
+  String get logIssueTrackNotFoundLabel => 'TRACK NOT FOUND';
+
+  @override
+  String get logIssueTrackNotFoundDescription =>
+      'Some tracks could not be found on download services';
+
+  @override
+  String get logIssueTrackNotFoundSuggestion =>
+      'The track may not be available in lossless quality';
+
+  @override
+  String get clickableLookingUpArtist => 'Looking up artist...';
+
+  @override
+  String clickableInformationUnavailable(String type) {
+    return '$type information not available';
+  }
+
+  @override
+  String get extensionDetailsTags => 'Tags';
+
+  @override
+  String get extensionDetailsInformation => 'Information';
+
+  @override
+  String get extensionUtilityFunctions => 'Utility Functions';
+
+  @override
+  String get actionDismiss => 'Dismiss';
+
+  @override
+  String get setupChangeFolderTooltip => 'Change folder';
+
+  @override
+  String a11yOpenTrackByArtist(String trackName, String artistName) {
+    return 'Open track $trackName by $artistName';
+  }
+
+  @override
+  String a11yOpenItem(String itemType, String name) {
+    return 'Open $itemType $name';
+  }
+
+  @override
+  String a11yOpenItemCount(String title, int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'items',
+      one: 'item',
+    );
+    return 'Open $title, $count $_temp0';
+  }
+
+  @override
+  String a11yOpenAlbumByArtistTrackCount(
+    String albumName,
+    String artistName,
+    int trackCount,
+  ) {
+    return 'Open album $albumName by $artistName, $trackCount tracks';
+  }
+
+  @override
+  String a11yTrackByArtist(String trackName, String artistName) {
+    return '$trackName by $artistName';
+  }
+
+  @override
+  String a11ySelectAlbum(String albumName) {
+    return 'Select album $albumName';
+  }
+
+  @override
+  String a11yOpenAlbum(String albumName) {
+    return 'Open album $albumName';
+  }
 }

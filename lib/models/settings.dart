@@ -85,7 +85,7 @@ class AppSettings {
   lastSeenVersion; // Last app version the user has acknowledged (e.g. '3.7.0')
 
   const AppSettings({
-    this.defaultService = 'tidal',
+    this.defaultService = '',
     this.audioQuality = 'LOSSLESS',
     this.filenameFormat = '{title} - {artist}',
     this.downloadDirectory = '',

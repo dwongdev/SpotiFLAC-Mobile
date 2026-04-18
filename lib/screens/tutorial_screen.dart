@@ -408,7 +408,7 @@ class _InteractiveSearchExampleState extends State<_InteractiveSearchExample> {
             },
             style: TextStyle(color: colorScheme.onSurface, fontSize: 16),
             decoration: InputDecoration(
-              hintText: 'Paste or search...',
+              hintText: context.l10n.tutorialSearchHint,
               hintStyle: TextStyle(color: colorScheme.onSurfaceVariant),
               prefixIcon: Icon(Icons.search, color: colorScheme.primary),
               filled: true,
@@ -619,10 +619,10 @@ class _InteractiveDownloadExampleState
               Semantics(
                 button: true,
                 label: _isCompleted
-                    ? 'Download completed'
+                    ? context.l10n.tutorialDownloadCompletedSemantics
                     : _isDownloading
-                    ? 'Download in progress'
-                    : 'Start download',
+                    ? context.l10n.tutorialDownloadInProgressSemantics
+                    : context.l10n.tutorialStartDownloadSemantics,
                 child: GestureDetector(
                   onTap: _startDownload,
                   child: AnimatedContainer(

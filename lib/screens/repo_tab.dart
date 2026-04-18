@@ -142,7 +142,7 @@ class _RepoTabState extends ConsumerState<RepoTab> {
                           prefixIcon: const Icon(Icons.search),
                           suffixIcon: value.text.isNotEmpty
                               ? IconButton(
-                                  tooltip: 'Clear',
+                                  tooltip: context.l10n.dialogClear,
                                   icon: const Icon(Icons.clear),
                                   onPressed: () {
                                     _searchController.clear();

@@ -456,14 +456,6 @@ import Gobackend  // Import Go framework
             if let error = error { throw error }
             return response
 
-        case "getTidalMetadata":
-            let args = call.arguments as! [String: Any]
-            let resourceType = args["resource_type"] as! String
-            let resourceId = args["resource_id"] as! String
-            let response = GobackendGetTidalMetadata(resourceType, resourceId, &error)
-            if let error = error { throw error }
-            return response
-
         case "getProviderMetadata":
             let args = call.arguments as! [String: Any]
             let providerId = args["provider_id"] as! String
@@ -477,13 +469,6 @@ import Gobackend  // Import Go framework
             let args = call.arguments as! [String: Any]
             let url = args["url"] as! String
             let response = GobackendParseProviderURLJSON(url, &error)
-            if let error = error { throw error }
-            return response
-
-        case "convertTidalToSpotifyDeezer":
-            let args = call.arguments as! [String: Any]
-            let url = args["url"] as! String
-            let response = GobackendConvertTidalToSpotifyDeezer(url, &error)
             if let error = error { throw error }
             return response
 

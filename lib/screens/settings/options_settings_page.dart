@@ -107,10 +107,10 @@ class OptionsSettingsPage extends ConsumerWidget {
                     ),
                   SettingsSwitchItem(
                     icon: Icons.sell_outlined,
-                    title: 'Embed Metadata',
+                    title: context.l10n.optionsEmbedMetadata,
                     subtitle: settings.embedMetadata
-                        ? 'Write metadata, cover art, and embedded lyrics to files'
-                        : 'Disabled (advanced): skip all metadata embedding',
+                        ? context.l10n.optionsEmbedMetadataSubtitleOn
+                        : context.l10n.optionsEmbedMetadataSubtitleOff,
                     value: settings.embedMetadata,
                     onChanged: (v) =>
                         ref.read(settingsProvider.notifier).setEmbedMetadata(v),
@@ -135,7 +135,7 @@ class OptionsSettingsPage extends ConsumerWidget {
                     title: context.l10n.optionsMaxQualityCover,
                     subtitle: settings.embedMetadata
                         ? context.l10n.optionsMaxQualityCoverSubtitle
-                        : 'Disabled when metadata embedding is off',
+                        : context.l10n.optionsMaxQualityCoverSubtitleDisabled,
                     value: settings.maxQualityCover,
                     enabled: settings.embedMetadata,
                     onChanged: (v) => ref

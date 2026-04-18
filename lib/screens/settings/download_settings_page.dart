@@ -297,11 +297,34 @@ class _DownloadSettingsPageState extends ConsumerState<DownloadSettingsPage> {
   @override
   Widget build(BuildContext context) {
     final settings = ref.watch(settingsProvider);
+    final extensionState = ref.watch(extensionProvider);
     final colorScheme = Theme.of(context).colorScheme;
     final topPadding = normalizedHeaderTopPadding(context);
+    final extensionDownloadProviders = extensionState.extensions
+        .where(
+          (extension) => extension.enabled && extension.hasDownloadProvider,
+        )
+        .toList(growable: false);
+    final extensionNotifier = ref.read(extensionProvider.notifier);
+    final hasDownloadProviders =
+        builtInDownloadProviderSpecs.isNotEmpty ||
+        extensionDownloadProviders.isNotEmpty;
 
     final isBuiltInService = isBuiltInDownloadProvider(settings.defaultService);
-    final isTidalService = settings.defaultService == 'tidal';
+    final replacedBuiltInServiceId = builtInDownloadProviderSpecs
+        .map((provider) => provider.id)
+        .where(
+          (providerId) => extensionNotifier.downloadProviderMatchesBuiltIn(
+            settings.defaultService,
+            providerId,
+          ),
+        )
+        .firstOrNull;
+    final effectiveBuiltInServiceId = isBuiltInService
+        ? settings.defaultService
+        : replacedBuiltInServiceId;
+    final isBuiltInCompatibleService = effectiveBuiltInServiceId != null;
+    final isTidalService = effectiveBuiltInServiceId == 'tidal';
 
     return PopScope(
       canPop: true,
@@ -375,17 +398,19 @@ class _DownloadSettingsPageState extends ConsumerState<DownloadSettingsPage> {
                   SettingsSwitchItem(
                     icon: Icons.tune,
                     title: context.l10n.downloadAskBeforeDownload,
-                    subtitle: isBuiltInService
+                    subtitle: !hasDownloadProviders
+                        ? context.l10n.extensionsNoDownloadProvider
+                        : isBuiltInCompatibleService
                         ? context.l10n.downloadAskQualitySubtitle
                         : context.l10n.downloadSelectServiceToEnable,
                     value: settings.askQualityBeforeDownload,
-                    enabled: isBuiltInService,
+                    enabled: hasDownloadProviders && isBuiltInCompatibleService,
                     onChanged: (value) => ref
                         .read(settingsProvider.notifier)
                         .setAskQualityBeforeDownload(value),
                   ),
                   if (!settings.askQualityBeforeDownload &&
-                      isBuiltInService) ...[
+                      isBuiltInCompatibleService) ...[
                     _QualityOption(
                       title: context.l10n.qualityFlacLossless,
                       subtitle: context.l10n.qualityFlacLosslessSubtitle,
@@ -441,7 +466,13 @@ class _DownloadSettingsPageState extends ConsumerState<DownloadSettingsPage> {
                         showDivider: false,
                       ),
                   ],
-                  if (!isBuiltInService) ...[
+                  if (!hasDownloadProviders) ...[
+                    _InlineInfoMessage(
+                      icon: Icons.extension_outlined,
+                      text: context.l10n.extensionsNoDownloadProvider,
+                      secondaryText: context.l10n.storeAddRepoDescription,
+                    ),
+                  ] else if (!isBuiltInCompatibleService) ...[
                     Padding(
                       padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
                       child: Row(
@@ -1076,7 +1107,10 @@ class _DownloadSettingsPageState extends ConsumerState<DownloadSettingsPage> {
                     TextField(
                       controller: controller,
                       decoration: InputDecoration(
-                        hintText: '{artist} - {title}',
+                        hintText: context.l10n.downloadFilenameHintExample(
+                          '{artist}',
+                          '{title}',
+                        ),
                         filled: true,
                         fillColor: colorScheme.surfaceContainerHighest
                             .withValues(alpha: 0.3),
@@ -2070,35 +2104,100 @@ class _ServiceSelector extends ConsumerWidget {
       padding: const EdgeInsets.all(12),
       child: Column(
         children: [
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: [
-              for (final provider in builtInProviders)
-                _ServiceChip(
-                  icon: resolveProviderIcon(provider.id),
-                  label: provider.displayName,
-                  isSelected: effectiveService == provider.id,
-                  onTap: () => onChanged(provider.id),
-                ),
-            ],
-          ),
-          if (extensionProviders.isNotEmpty) ...[
-            const SizedBox(height: 8),
+          if (builtInProviders.isEmpty && extensionProviders.isEmpty)
+            _InlineInfoMessage(
+              icon: Icons.extension_outlined,
+              text: context.l10n.extensionsNoDownloadProvider,
+              secondaryText: context.l10n.storeAddRepoDescription,
+            )
+          else ...[
             Wrap(
               spacing: 8,
               runSpacing: 8,
               children: [
-                for (final extension in extensionProviders)
+                for (final provider in builtInProviders)
                   _ServiceChip(
-                    icon: Icons.extension,
-                    label: extension.displayName,
-                    isSelected: effectiveService == extension.id,
-                    onTap: () => onChanged(extension.id),
+                    icon: resolveProviderIcon(provider.id),
+                    label: provider.displayName,
+                    isSelected: effectiveService == provider.id,
+                    onTap: () => onChanged(provider.id),
                   ),
               ],
             ),
+            if (extensionProviders.isNotEmpty) ...[
+              const SizedBox(height: 8),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  for (final extension in extensionProviders)
+                    _ServiceChip(
+                      icon: Icons.extension,
+                      label: extension.displayName,
+                      isSelected: effectiveService == extension.id,
+                      onTap: () => onChanged(extension.id),
+                    ),
+                ],
+              ),
+            ],
           ],
+        ],
+      ),
+    );
+  }
+}
+
+class _InlineInfoMessage extends StatelessWidget {
+  final IconData icon;
+  final String text;
+  final String? secondaryText;
+
+  const _InlineInfoMessage({
+    required this.icon,
+    required this.text,
+    this.secondaryText,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.45),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(
+          color: colorScheme.outlineVariant.withValues(alpha: 0.4),
+        ),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, size: 18, color: colorScheme.onSurfaceVariant),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  text,
+                  style: Theme.of(
+                    context,
+                  ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600),
+                ),
+                if (secondaryText != null && secondaryText!.isNotEmpty) ...[
+                  const SizedBox(height: 4),
+                  Text(
+                    secondaryText!,
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
         ],
       ),
     );

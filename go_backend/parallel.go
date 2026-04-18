@@ -8,9 +8,8 @@ import (
 )
 
 type TrackIDCacheEntry struct {
-	TidalTrackID  int64
-	QobuzTrackID  int64
-	ExpiresAt     time.Time
+	QobuzTrackID int64
+	ExpiresAt    time.Time
 }
 
 type TrackIDCache struct {
@@ -65,25 +64,6 @@ func (c *TrackIDCache) pruneExpiredLocked(now time.Time) {
 		if now.After(entry.ExpiresAt) {
 			delete(c.cache, key)
 		}
-	}
-}
-
-func (c *TrackIDCache) SetTidal(isrc string, trackID int64) {
-	c.mu.Lock()
-	defer c.mu.Unlock()
-
-	entry, exists := c.cache[isrc]
-	if !exists {
-		entry = &TrackIDCacheEntry{}
-		c.cache[isrc] = entry
-	}
-	entry.TidalTrackID = trackID
-	now := time.Now()
-	entry.ExpiresAt = now.Add(c.ttl)
-
-	if c.cleanupInterval > 0 && (c.lastCleanup.IsZero() || now.Sub(c.lastCleanup) >= c.cleanupInterval) {
-		c.pruneExpiredLocked(now)
-		c.lastCleanup = now
 	}
 }
 
@@ -211,8 +191,6 @@ func PreWarmTrackCache(requests []PreWarmCacheRequest) {
 			defer func() { <-semaphore }()
 
 			switch r.Service {
-			case "tidal":
-				preWarmTidalCache(r.ISRC, r.TrackName, r.ArtistName)
 			case "qobuz":
 				preWarmQobuzCache(r.ISRC, r.SpotifyID)
 			}
@@ -220,14 +198,6 @@ func PreWarmTrackCache(requests []PreWarmCacheRequest) {
 	}
 
 	wg.Wait()
-}
-
-func preWarmTidalCache(isrc, _, _ string) {
-	downloader := NewTidalDownloader()
-	track, err := downloader.SearchTrackByISRC(isrc)
-	if err == nil && track != nil {
-		GetTrackIDCache().SetTidal(isrc, track.ID)
-	}
 }
 
 // preWarmQobuzCache tries to get Qobuz Track ID in the following order:

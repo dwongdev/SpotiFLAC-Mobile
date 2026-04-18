@@ -737,7 +737,7 @@ class _LocalAlbumScreenState extends ConsumerState<LocalAlbumScreen> {
           trailing: _isSelectionMode
               ? null
               : IconButton(
-                  tooltip: 'Play track',
+                  tooltip: context.l10n.tooltipPlay,
                   onPressed: () => _openFile(track),
                   icon: Icon(Icons.play_arrow, color: colorScheme.primary),
                   style: IconButton.styleFrom(

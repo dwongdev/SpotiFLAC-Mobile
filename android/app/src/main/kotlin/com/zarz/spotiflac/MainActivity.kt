@@ -2897,14 +2897,6 @@ class MainActivity: FlutterFragmentActivity() {
                             }
                             result.success(response)
                         }
-                        "getTidalMetadata" -> {
-                            val resourceType = call.argument<String>("resource_type") ?: ""
-                            val resourceId = call.argument<String>("resource_id") ?: ""
-                            val response = withContext(Dispatchers.IO) {
-                                Gobackend.getTidalMetadata(resourceType, resourceId)
-                            }
-                            result.success(response)
-                        }
                         "getProviderMetadata" -> {
                             val providerId = call.argument<String>("provider_id") ?: ""
                             val resourceType = call.argument<String>("resource_type") ?: ""
@@ -2918,13 +2910,6 @@ class MainActivity: FlutterFragmentActivity() {
                             val url = call.argument<String>("url") ?: ""
                             val response = withContext(Dispatchers.IO) {
                                 Gobackend.parseProviderURLJSON(url)
-                            }
-                            result.success(response)
-                        }
-                        "convertTidalToSpotifyDeezer" -> {
-                            val url = call.argument<String>("url") ?: ""
-                            val response = withContext(Dispatchers.IO) {
-                                Gobackend.convertTidalToSpotifyDeezer(url)
                             }
                             result.success(response)
                         }
