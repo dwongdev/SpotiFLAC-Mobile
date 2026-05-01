@@ -29,7 +29,7 @@ class PlatformBridge {
       'spotify_id': spotifyId,
       'isrc': isrc,
     });
-    return jsonDecode(result as String) as Map<String, dynamic>;
+    return _decodeRequiredMapResult(result, 'checkAvailability');
   }
 
   static Future<Map<String, dynamic>> _invokeDownloadMethod(
@@ -38,7 +38,7 @@ class PlatformBridge {
   ) async {
     final request = jsonEncode(payload.toJson());
     final result = await _channel.invokeMethod(method, request);
-    return jsonDecode(result as String) as Map<String, dynamic>;
+    return _decodeRequiredMapResult(result, method);
   }
 
   static Future<Map<String, dynamic>> downloadByStrategy({
@@ -133,7 +133,7 @@ class PlatformBridge {
       'output_dir': outputDir,
       'isrc': isrc,
     });
-    return jsonDecode(result as String) as Map<String, dynamic>;
+    return _decodeRequiredMapResult(result, 'checkDuplicate');
   }
 
   static Future<String> buildFilename(
@@ -156,8 +156,7 @@ class PlatformBridge {
 
   static Future<Map<String, dynamic>?> pickSafTree() async {
     final result = await _channel.invokeMethod('pickSafTree');
-    if (result == null) return null;
-    return jsonDecode(result as String) as Map<String, dynamic>;
+    return _decodeNullableMapResult(result, 'pickSafTree');
   }
 
   static Future<bool> safExists(String uri) async {
@@ -172,7 +171,7 @@ class PlatformBridge {
 
   static Future<Map<String, dynamic>> safStat(String uri) async {
     final result = await _channel.invokeMethod('safStat', {'uri': uri});
-    return jsonDecode(result as String) as Map<String, dynamic>;
+    return _decodeRequiredMapResult(result, 'safStat');
   }
 
   static Future<Map<String, dynamic>> resolveSafFile({
@@ -185,7 +184,7 @@ class PlatformBridge {
       'relative_dir': relativeDir,
       'file_name': fileName,
     });
-    return jsonDecode(result as String) as Map<String, dynamic>;
+    return _decodeRequiredMapResult(result, 'resolveSafFile');
   }
 
   static Future<String?> copyContentUriToTemp(String uri) async {
@@ -259,7 +258,7 @@ class PlatformBridge {
       'artist_name': artistName,
       'duration_ms': durationMs,
     });
-    return jsonDecode(result as String) as Map<String, dynamic>;
+    return _decodeRequiredMapResult(result, 'fetchLyrics');
   }
 
   static Future<String> getLyricsLRC(
@@ -293,7 +292,7 @@ class PlatformBridge {
       'file_path': filePath ?? '',
       'duration_ms': durationMs,
     });
-    return jsonDecode(result as String) as Map<String, dynamic>;
+    return _decodeRequiredMapResult(result, 'getLyricsLRCWithSource');
   }
 
   static Future<Map<String, dynamic>> embedLyricsToFile(
@@ -304,7 +303,7 @@ class PlatformBridge {
       'file_path': filePath,
       'lyrics': lyrics,
     });
-    return jsonDecode(result as String) as Map<String, dynamic>;
+    return _decodeRequiredMapResult(result, 'embedLyricsToFile');
   }
 
   static Future<void> cleanupConnections() async {
@@ -321,7 +320,7 @@ class PlatformBridge {
       'output_path': outputPath,
       'max_quality': maxQuality,
     });
-    return jsonDecode(result as String) as Map<String, dynamic>;
+    return _decodeRequiredMapResult(result, 'downloadCoverToFile');
   }
 
   static Future<Map<String, dynamic>> extractCoverToFile(
@@ -332,7 +331,7 @@ class PlatformBridge {
       'audio_path': audioPath,
       'output_path': outputPath,
     });
-    return jsonDecode(result as String) as Map<String, dynamic>;
+    return _decodeRequiredMapResult(result, 'extractCoverToFile');
   }
 
   static Future<Map<String, dynamic>> fetchAndSaveLyrics({
@@ -351,7 +350,7 @@ class PlatformBridge {
       'output_path': outputPath,
       'audio_file_path': audioFilePath,
     });
-    return jsonDecode(result as String) as Map<String, dynamic>;
+    return _decodeRequiredMapResult(result, 'fetchAndSaveLyrics');
   }
 
   /// Providers not in the list are disabled.
@@ -364,15 +363,13 @@ class PlatformBridge {
 
   static Future<List<String>> getLyricsProviders() async {
     final result = await _channel.invokeMethod('getLyricsProviders');
-    final List<dynamic> decoded = jsonDecode(result as String) as List<dynamic>;
-    return decoded.cast<String>();
+    return _decodeStringListResult(result, 'getLyricsProviders');
   }
 
   static Future<List<Map<String, dynamic>>>
   getAvailableLyricsProviders() async {
     final result = await _channel.invokeMethod('getAvailableLyricsProviders');
-    final List<dynamic> decoded = jsonDecode(result as String) as List<dynamic>;
-    return decoded.cast<Map<String, dynamic>>();
+    return _decodeMapListResult(result, 'getAvailableLyricsProviders');
   }
 
   /// Sets advanced lyrics fetch options used by provider-specific integrations.
@@ -387,7 +384,7 @@ class PlatformBridge {
 
   static Future<Map<String, dynamic>> getLyricsFetchOptions() async {
     final result = await _channel.invokeMethod('getLyricsFetchOptions');
-    return jsonDecode(result as String) as Map<String, dynamic>;
+    return _decodeRequiredMapResult(result, 'getLyricsFetchOptions');
   }
 
   static Future<Map<String, dynamic>> reEnrichFile(
@@ -397,14 +394,14 @@ class PlatformBridge {
     final result = await _channel.invokeMethod('reEnrichFile', {
       'request_json': requestJSON,
     });
-    return jsonDecode(result as String) as Map<String, dynamic>;
+    return _decodeRequiredMapResult(result, 'reEnrichFile');
   }
 
   static Future<Map<String, dynamic>> readFileMetadata(String filePath) async {
     final result = await _channel.invokeMethod('readFileMetadata', {
       'file_path': filePath,
     });
-    return jsonDecode(result as String) as Map<String, dynamic>;
+    return _decodeRequiredMapResult(result, 'readFileMetadata');
   }
 
   static Future<Map<String, dynamic>> editFileMetadata(
@@ -416,7 +413,7 @@ class PlatformBridge {
       'file_path': filePath,
       'metadata_json': metadataJSON,
     });
-    return jsonDecode(result as String) as Map<String, dynamic>;
+    return _decodeRequiredMapResult(result, 'editFileMetadata');
   }
 
   /// Rewrites ARTIST/ALBUMARTIST Vorbis comments as multiple split entries
@@ -431,7 +428,7 @@ class PlatformBridge {
       'artist': artist,
       'album_artist': albumArtist,
     });
-    return jsonDecode(result as String) as Map<String, dynamic>;
+    return _decodeRequiredMapResult(result, 'rewriteSplitArtistTags');
   }
 
   static Future<bool> writeTempToSaf(String tempPath, String safUri) async {
@@ -439,7 +436,7 @@ class PlatformBridge {
       'temp_path': tempPath,
       'saf_uri': safUri,
     });
-    final map = jsonDecode(result as String) as Map<String, dynamic>;
+    final map = _decodeRequiredMapResult(result, 'writeTempToSaf');
     return map['success'] == true;
   }
 
@@ -510,7 +507,7 @@ class PlatformBridge {
       'artist_limit': artistLimit,
       'filter': filter ?? '',
     });
-    return jsonDecode(result as String) as Map<String, dynamic>;
+    return _decodeRequiredMapResult(result, 'searchProviderAll');
   }
 
   static Future<Map<String, dynamic>> getDeezerRelatedArtists(
@@ -521,14 +518,14 @@ class PlatformBridge {
       'artist_id': artistId,
       'limit': limit,
     });
-    return jsonDecode(result as String) as Map<String, dynamic>;
+    return _decodeRequiredMapResult(result, 'getDeezerRelatedArtists');
   }
 
   static Future<Map<String, dynamic>> parseProviderUrl(String url) async {
     final result = await _channel.invokeMethod('parseProviderUrl', {
       'url': url,
     });
-    return jsonDecode(result as String) as Map<String, dynamic>;
+    return _decodeRequiredMapResult(result, 'parseProviderUrl');
   }
 
   static Future<Map<String, dynamic>> getProviderMetadata(
@@ -546,7 +543,7 @@ class PlatformBridge {
         'getProviderMetadata returned null for $providerId:$resourceType:$resourceId',
       );
     }
-    return jsonDecode(result as String) as Map<String, dynamic>;
+    return _decodeRequiredMapResult(result, 'getProviderMetadata');
   }
 
   static Future<Map<String, dynamic>> searchDeezerByISRC(
@@ -557,7 +554,7 @@ class PlatformBridge {
       'isrc': isrc,
       'item_id': itemId ?? '',
     });
-    return jsonDecode(result as String) as Map<String, dynamic>;
+    return _decodeRequiredMapResult(result, 'searchDeezerByISRC');
   }
 
   static Future<Map<String, String>?> getDeezerExtendedMetadata(
@@ -568,7 +565,10 @@ class PlatformBridge {
         'track_id': trackId,
       });
       if (result == null) return null;
-      final data = jsonDecode(result as String) as Map<String, dynamic>;
+      final data = _decodeRequiredMapResult(
+        result,
+        'getDeezerExtendedMetadata',
+      );
       return {
         'genre': data['genre'] as String? ?? '',
         'label': data['label'] as String? ?? '',
@@ -588,20 +588,19 @@ class PlatformBridge {
       'resource_type': resourceType,
       'spotify_id': spotifyId,
     });
-    return jsonDecode(result as String) as Map<String, dynamic>;
+    return _decodeRequiredMapResult(result, 'convertSpotifyToDeezer');
   }
 
   static Future<List<Map<String, dynamic>>> getGoLogs() async {
     final result = await _channel.invokeMethod('getLogs');
-    final logs = jsonDecode(result as String) as List<dynamic>;
-    return logs.map((e) => e as Map<String, dynamic>).toList();
+    return _decodeMapListResult(result, 'getGoLogs');
   }
 
   static Future<Map<String, dynamic>> getGoLogsSince(int index) async {
     final result = await _channel.invokeMethod('getLogsSince', {
       'index': index,
     });
-    return jsonDecode(result as String) as Map<String, dynamic>;
+    return _decodeRequiredMapResult(result, 'getGoLogsSince');
   }
 
   static Future<void> clearGoLogs() async {
@@ -635,7 +634,7 @@ class PlatformBridge {
     final result = await _channel.invokeMethod('loadExtensionsFromDir', {
       'dir_path': dirPath,
     });
-    return jsonDecode(result as String) as Map<String, dynamic>;
+    return _decodeRequiredMapResult(result, 'loadExtensionsFromDir');
   }
 
   static Future<Map<String, dynamic>> loadExtensionFromPath(
@@ -645,7 +644,7 @@ class PlatformBridge {
     final result = await _channel.invokeMethod('loadExtensionFromPath', {
       'file_path': filePath,
     });
-    return jsonDecode(result as String) as Map<String, dynamic>;
+    return _decodeRequiredMapResult(result, 'loadExtensionFromPath');
   }
 
   static Future<void> unloadExtension(String extensionId) async {
@@ -667,7 +666,7 @@ class PlatformBridge {
     final result = await _channel.invokeMethod('upgradeExtension', {
       'file_path': filePath,
     });
-    return jsonDecode(result as String) as Map<String, dynamic>;
+    return _decodeRequiredMapResult(result, 'upgradeExtension');
   }
 
   static Future<Map<String, dynamic>> checkExtensionUpgrade(
@@ -677,13 +676,12 @@ class PlatformBridge {
     final result = await _channel.invokeMethod('checkExtensionUpgrade', {
       'file_path': filePath,
     });
-    return jsonDecode(result as String) as Map<String, dynamic>;
+    return _decodeRequiredMapResult(result, 'checkExtensionUpgrade');
   }
 
   static Future<List<Map<String, dynamic>>> getInstalledExtensions() async {
     final result = await _channel.invokeMethod('getInstalledExtensions');
-    final list = jsonDecode(result as String) as List<dynamic>;
-    return list.map((e) => e as Map<String, dynamic>).toList();
+    return _decodeMapListResult(result, 'getInstalledExtensions');
   }
 
   static Future<void> setExtensionEnabled(
@@ -706,8 +704,7 @@ class PlatformBridge {
 
   static Future<List<String>> getProviderPriority() async {
     final result = await _channel.invokeMethod('getProviderPriority');
-    final list = jsonDecode(result as String) as List<dynamic>;
-    return list.map((e) => e as String).toList();
+    return _decodeStringListResult(result, 'getProviderPriority');
   }
 
   static Future<void> setDownloadFallbackExtensionIds(
@@ -730,8 +727,7 @@ class PlatformBridge {
 
   static Future<List<String>> getMetadataProviderPriority() async {
     final result = await _channel.invokeMethod('getMetadataProviderPriority');
-    final list = jsonDecode(result as String) as List<dynamic>;
-    return list.map((e) => e as String).toList();
+    return _decodeStringListResult(result, 'getMetadataProviderPriority');
   }
 
   static Future<Map<String, dynamic>> getExtensionSettings(
@@ -740,7 +736,7 @@ class PlatformBridge {
     final result = await _channel.invokeMethod('getExtensionSettings', {
       'extension_id': extensionId,
     });
-    return jsonDecode(result as String) as Map<String, dynamic>;
+    return _decodeRequiredMapResult(result, 'getExtensionSettings');
   }
 
   static Future<void> setExtensionSettings(
@@ -766,7 +762,7 @@ class PlatformBridge {
     if (result == null || (result as String).isEmpty) {
       return {'success': true};
     }
-    return jsonDecode(result) as Map<String, dynamic>;
+    return _decodeRequiredMapResult(result, 'invokeExtensionAction');
   }
 
   static Future<List<Map<String, dynamic>>> searchTracksWithExtensions(
@@ -778,8 +774,7 @@ class PlatformBridge {
       'query': query,
       'limit': limit,
     });
-    final list = jsonDecode(result as String) as List<dynamic>;
-    return list.map((e) => e as Map<String, dynamic>).toList();
+    return _decodeMapListResult(result, 'searchTracksWithExtensions');
   }
 
   static Future<List<Map<String, dynamic>>> searchTracksWithMetadataProviders(
@@ -794,8 +789,7 @@ class PlatformBridge {
       'searchTracksWithMetadataProviders',
       {'query': query, 'limit': limit, 'include_extensions': includeExtensions},
     );
-    final list = jsonDecode(result as String) as List<dynamic>;
-    return list.map((e) => e as Map<String, dynamic>).toList();
+    return _decodeMapListResult(result, 'searchTracksWithMetadataProviders');
   }
 
   static Future<void> cleanupExtensions() async {
@@ -809,8 +803,7 @@ class PlatformBridge {
     final result = await _channel.invokeMethod('getExtensionPendingAuth', {
       'extension_id': extensionId,
     });
-    if (result == null) return null;
-    return jsonDecode(result as String) as Map<String, dynamic>;
+    return _decodeNullableMapResult(result, 'getExtensionPendingAuth');
   }
 
   static Future<void> setExtensionAuthCode(
@@ -854,8 +847,7 @@ class PlatformBridge {
 
   static Future<List<Map<String, dynamic>>> getAllPendingAuthRequests() async {
     final result = await _channel.invokeMethod('getAllPendingAuthRequests');
-    final list = jsonDecode(result as String) as List<dynamic>;
-    return list.map((e) => e as Map<String, dynamic>).toList();
+    return _decodeMapListResult(result, 'getAllPendingAuthRequests');
   }
 
   static Future<Map<String, dynamic>?> getPendingFFmpegCommand(
@@ -864,8 +856,7 @@ class PlatformBridge {
     final result = await _channel.invokeMethod('getPendingFFmpegCommand', {
       'command_id': commandId,
     });
-    if (result == null) return null;
-    return jsonDecode(result as String) as Map<String, dynamic>;
+    return _decodeNullableMapResult(result, 'getPendingFFmpegCommand');
   }
 
   static Future<void> setFFmpegCommandResult(
@@ -885,8 +876,7 @@ class PlatformBridge {
   static Future<List<Map<String, dynamic>>>
   getAllPendingFFmpegCommands() async {
     final result = await _channel.invokeMethod('getAllPendingFFmpegCommands');
-    final list = jsonDecode(result as String) as List<dynamic>;
-    return list.map((e) => e as Map<String, dynamic>).toList();
+    return _decodeMapListResult(result, 'setFFmpegCommandResult');
   }
 
   static Future<List<Map<String, dynamic>>> customSearchWithExtension(
@@ -899,20 +889,17 @@ class PlatformBridge {
       'query': query,
       'options': options != null ? jsonEncode(options) : '',
     });
-    final list = jsonDecode(result as String) as List<dynamic>;
-    return list.map((e) => e as Map<String, dynamic>).toList();
+    return _decodeMapListResult(result, 'customSearchWithExtension');
   }
 
   static Future<List<Map<String, dynamic>>> getSearchProviders() async {
     final result = await _channel.invokeMethod('getSearchProviders');
-    final list = jsonDecode(result as String) as List<dynamic>;
-    return list.map((e) => e as Map<String, dynamic>).toList();
+    return _decodeMapListResult(result, 'getSearchProviders');
   }
 
   static Future<List<Map<String, dynamic>>> getBuiltInProviders() async {
     final result = await _channel.invokeMethod('getBuiltInProviders');
-    final list = jsonDecode(result as String) as List<dynamic>;
-    return list.map((e) => e as Map<String, dynamic>).toList();
+    return _decodeMapListResult(result, 'getBuiltInProviders');
   }
 
   static Future<Map<String, dynamic>?> handleURLWithExtension(
@@ -922,8 +909,7 @@ class PlatformBridge {
       final result = await _channel.invokeMethod('handleURLWithExtension', {
         'url': url,
       });
-      if (result == null || result == '') return null;
-      return jsonDecode(result as String) as Map<String, dynamic>;
+      return _decodeNullableMapResult(result, 'handleURLWithExtension');
     } catch (e) {
       return null;
     }
@@ -937,8 +923,7 @@ class PlatformBridge {
 
   static Future<List<Map<String, dynamic>>> getURLHandlers() async {
     final result = await _channel.invokeMethod('getURLHandlers');
-    final list = jsonDecode(result as String) as List<dynamic>;
-    return list.map((e) => e as Map<String, dynamic>).toList();
+    return _decodeMapListResult(result, 'getURLHandlers');
   }
 
   static Future<Map<String, dynamic>?> getExtensionHomeFeed(
@@ -948,8 +933,7 @@ class PlatformBridge {
       final result = await _channel.invokeMethod('getExtensionHomeFeed', {
         'extension_id': extensionId,
       });
-      if (result == null || result == '') return null;
-      return jsonDecode(result as String) as Map<String, dynamic>;
+      return _decodeNullableMapResult(result, 'getExtensionHomeFeed');
     } catch (e) {
       _log.e('getExtensionHomeFeed failed: $e');
       return null;
@@ -964,8 +948,7 @@ class PlatformBridge {
         'getExtensionBrowseCategories',
         {'extension_id': extensionId},
       );
-      if (result == null || result == '') return null;
-      return jsonDecode(result as String) as Map<String, dynamic>;
+      return _decodeNullableMapResult(result, 'getExtensionBrowseCategories');
     } catch (e) {
       _log.e('getExtensionBrowseCategories failed: $e');
       return null;
@@ -986,8 +969,7 @@ class PlatformBridge {
     final result = await _channel.invokeMethod('scanLibraryFolder', {
       'folder_path': folderPath,
     });
-    final list = jsonDecode(result as String) as List<dynamic>;
-    return list.map((e) => e as Map<String, dynamic>).toList();
+    return _decodeMapListResult(result, 'scanLibraryFolder');
   }
 
   static Future<Map<String, dynamic>> scanLibraryFolderIncremental(
@@ -1001,7 +983,7 @@ class PlatformBridge {
       'folder_path': folderPath,
       'existing_files': jsonEncode(existingFiles),
     });
-    return jsonDecode(result as String) as Map<String, dynamic>;
+    return _decodeRequiredMapResult(result, 'scanLibraryFolderIncremental');
   }
 
   static Future<Map<String, dynamic>> scanLibraryFolderIncrementalFromSnapshot(
@@ -1012,7 +994,10 @@ class PlatformBridge {
       'scanLibraryFolderIncrementalFromSnapshot',
       {'folder_path': folderPath, 'snapshot_path': snapshotPath},
     );
-    return jsonDecode(result as String) as Map<String, dynamic>;
+    return _decodeRequiredMapResult(
+      result,
+      'scanLibraryFolderIncrementalFromSnapshot',
+    );
   }
 
   static Future<List<Map<String, dynamic>>> scanSafTree(String treeUri) async {
@@ -1020,8 +1005,7 @@ class PlatformBridge {
     final result = await _channel.invokeMethod('scanSafTree', {
       'tree_uri': treeUri,
     });
-    final list = jsonDecode(result as String) as List<dynamic>;
-    return list.map((e) => e as Map<String, dynamic>).toList();
+    return _decodeMapListResult(result, 'scanSafTree');
   }
 
   static Future<Map<String, dynamic>> scanSafTreeIncremental(
@@ -1035,7 +1019,7 @@ class PlatformBridge {
       'tree_uri': treeUri,
       'existing_files': jsonEncode(existingFiles),
     });
-    return jsonDecode(result as String) as Map<String, dynamic>;
+    return _decodeRequiredMapResult(result, 'scanSafTreeIncremental');
   }
 
   static Future<Map<String, dynamic>> scanSafTreeIncrementalFromSnapshot(
@@ -1046,14 +1030,17 @@ class PlatformBridge {
       'scanSafTreeIncrementalFromSnapshot',
       {'tree_uri': treeUri, 'snapshot_path': snapshotPath},
     );
-    return jsonDecode(result as String) as Map<String, dynamic>;
+    return _decodeRequiredMapResult(
+      result,
+      'scanSafTreeIncrementalFromSnapshot',
+    );
   }
 
   static Future<Map<String, int>> getSafFileModTimes(List<String> uris) async {
     final result = await _channel.invokeMethod('getSafFileModTimes', {
       'uris': jsonEncode(uris),
     });
-    final map = jsonDecode(result as String) as Map<String, dynamic>;
+    final map = _decodeRequiredMapResult(result, 'getSafFileModTimes');
     return map.map((key, value) => MapEntry(key, (value as num).toInt()));
   }
 
@@ -1070,6 +1057,73 @@ class PlatformBridge {
 
   static Future<void> cancelLibraryScan() async {
     await _channel.invokeMethod('cancelLibraryScan');
+  }
+
+  static Object? _decodeJsonResult(dynamic result) {
+    if (result is String) {
+      if (result.isEmpty) return null;
+      return jsonDecode(result);
+    }
+    return result;
+  }
+
+  static Map<String, dynamic> _decodeRequiredMapResult(
+    dynamic result,
+    String method,
+  ) {
+    final decoded = _decodeJsonResult(result);
+    if (decoded is Map) {
+      return decoded.cast<String, dynamic>();
+    }
+    throw FormatException(
+      'Expected map result from $method, got ${decoded.runtimeType}',
+    );
+  }
+
+  static Map<String, dynamic>? _decodeNullableMapResult(
+    dynamic result,
+    String method,
+  ) {
+    final decoded = _decodeJsonResult(result);
+    if (decoded == null) return null;
+    if (decoded is Map) {
+      return decoded.cast<String, dynamic>();
+    }
+    throw FormatException(
+      'Expected nullable map result from $method, got ${decoded.runtimeType}',
+    );
+  }
+
+  static List<dynamic> _decodeRequiredListResult(
+    dynamic result,
+    String method,
+  ) {
+    final decoded = _decodeJsonResult(result);
+    if (decoded is List) return decoded;
+    throw FormatException(
+      'Expected list result from $method, got ${decoded.runtimeType}',
+    );
+  }
+
+  static List<Map<String, dynamic>> _decodeMapListResult(
+    dynamic result,
+    String method,
+  ) {
+    return _decodeRequiredListResult(result, method).map((entry) {
+      if (entry is Map) return entry.cast<String, dynamic>();
+      throw FormatException(
+        'Expected map entry from $method, got ${entry.runtimeType}',
+      );
+    }).toList();
+  }
+
+  static List<String> _decodeStringListResult(dynamic result, String method) {
+    return _decodeRequiredListResult(result, method).map((entry) {
+      if (entry is String) return entry;
+      throw FormatException(
+        'Expected string entry from $method, got ${entry.runtimeType}',
+      );
+    }).toList();
   }
 
   static Map<String, dynamic> _decodeMapResult(dynamic result) {
@@ -1134,8 +1188,7 @@ class PlatformBridge {
       final result = await _channel.invokeMethod('readAudioMetadata', {
         'file_path': filePath,
       });
-      if (result == null || result == '') return null;
-      return jsonDecode(result as String) as Map<String, dynamic>;
+      return _decodeNullableMapResult(result, 'readAudioMetadata');
     } catch (e) {
       _log.w('Failed to read audio metadata: $e');
       return null;
@@ -1150,7 +1203,7 @@ class PlatformBridge {
       'file_path': filePath,
       'metadata': metadata != null ? jsonEncode(metadata) : '',
     });
-    return jsonDecode(result as String) as Map<String, dynamic>;
+    return _decodeRequiredMapResult(result, 'runPostProcessing');
   }
 
   static Future<Map<String, dynamic>> runPostProcessingV2(
@@ -1167,13 +1220,12 @@ class PlatformBridge {
       'input': jsonEncode(input),
       'metadata': metadata != null ? jsonEncode(metadata) : '',
     });
-    return jsonDecode(result as String) as Map<String, dynamic>;
+    return _decodeRequiredMapResult(result, 'runPostProcessingV2');
   }
 
   static Future<List<Map<String, dynamic>>> getPostProcessingProviders() async {
     final result = await _channel.invokeMethod('getPostProcessingProviders');
-    final list = jsonDecode(result as String) as List<dynamic>;
-    return list.map((e) => e as Map<String, dynamic>).toList();
+    return _decodeMapListResult(result, 'getPostProcessingProviders');
   }
 
   static Future<void> initExtensionStore(String cacheDir) async {
@@ -1206,8 +1258,7 @@ class PlatformBridge {
     final result = await _channel.invokeMethod('getStoreExtensions', {
       'force_refresh': forceRefresh,
     });
-    final list = jsonDecode(result as String) as List<dynamic>;
-    return list.map((e) => e as Map<String, dynamic>).toList();
+    return _decodeMapListResult(result, 'getStoreExtensions');
   }
 
   static Future<List<Map<String, dynamic>>> searchStoreExtensions(
@@ -1219,14 +1270,12 @@ class PlatformBridge {
       'query': query,
       'category': category ?? '',
     });
-    final list = jsonDecode(result as String) as List<dynamic>;
-    return list.map((e) => e as Map<String, dynamic>).toList();
+    return _decodeMapListResult(result, 'searchStoreExtensions');
   }
 
   static Future<List<String>> getStoreCategories() async {
     final result = await _channel.invokeMethod('getStoreCategories');
-    final list = jsonDecode(result as String) as List<dynamic>;
-    return list.cast<String>();
+    return _decodeStringListResult(result, 'getStoreCategories');
   }
 
   static Future<String> downloadStoreExtension(
@@ -1255,6 +1304,6 @@ class PlatformBridge {
       'cue_path': cuePath,
       'audio_dir': audioDir,
     });
-    return jsonDecode(result as String) as Map<String, dynamic>;
+    return _decodeRequiredMapResult(result, 'parseCueSheet');
   }
 }

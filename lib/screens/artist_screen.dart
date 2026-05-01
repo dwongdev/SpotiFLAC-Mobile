@@ -926,10 +926,12 @@ class _ArtistScreenState extends ConsumerState<ArtistScreen> {
       return;
     }
 
+    final progressDialogKey = GlobalKey<_FetchingProgressDialogState>();
     showDialog<void>(
       context: context,
       barrierDismissible: false,
       builder: (ctx) => _FetchingProgressDialog(
+        key: progressDialogKey,
         totalAlbums: albums.length,
         onCancel: () {
           setState(() => _isFetchingDiscography = false);
@@ -955,8 +957,7 @@ class _ArtistScreenState extends ConsumerState<ArtistScreen> {
       fetchedCount++;
 
       if (mounted) {
-        _FetchingProgressDialog.updateProgress(
-          context,
+        progressDialogKey.currentState?.updateProgress(
           fetchedCount,
           albums.length,
         );
@@ -2001,15 +2002,10 @@ class _FetchingProgressDialog extends StatefulWidget {
   final VoidCallback onCancel;
 
   const _FetchingProgressDialog({
+    super.key,
     required this.totalAlbums,
     required this.onCancel,
   });
-
-  static void updateProgress(BuildContext context, int current, int total) {
-    final state = context
-        .findAncestorStateOfType<_FetchingProgressDialogState>();
-    state?._updateProgress(current, total);
-  }
 
   @override
   State<_FetchingProgressDialog> createState() =>
@@ -2026,7 +2022,7 @@ class _FetchingProgressDialogState extends State<_FetchingProgressDialog> {
     _total = widget.totalAlbums;
   }
 
-  void _updateProgress(int current, int total) {
+  void updateProgress(int current, int total) {
     if (mounted) {
       setState(() {
         _current = current;
