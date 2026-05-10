@@ -1611,6 +1611,42 @@ class _TrackMetadataScreenState extends ConsumerState<TrackMetadataScreen> {
     return '$minutes:${secs.toString().padLeft(2, '0')}';
   }
 
+  String _displayFormatLabelForFile(String fileName) {
+    final localFormat = _isLocalItem
+        ? normalizeOptionalString(_localLibraryItem?.format)
+        : null;
+    final raw =
+        localFormat ??
+        (fileName.contains('.') ? fileName.split('.').last : 'Unknown');
+    final normalized = raw.toLowerCase().replaceAll('-', '_');
+    return switch (normalized) {
+      'flac' => 'FLAC',
+      'alac' => 'ALAC',
+      'eac3' || 'ec_3' => 'EAC3',
+      'ac3' || 'ac_3' => 'AC3',
+      'ac4' || 'ac_4' => 'AC4',
+      'aac' || 'mp4a' => 'AAC',
+      'm4a' => 'M4A',
+      'mp3' => 'MP3',
+      'opus' => 'Opus',
+      'ogg' => 'OGG',
+      _ => raw.toUpperCase(),
+    };
+  }
+
+  bool _isBitrateFormatLabel(String label) {
+    return const {
+      'MP3',
+      'OPUS',
+      'OGG',
+      'M4A',
+      'AAC',
+      'EAC3',
+      'AC3',
+      'AC4',
+    }.contains(label.toUpperCase());
+  }
+
   Widget _buildFileInfoCard(
     BuildContext context,
     ColorScheme colorScheme,
@@ -1619,9 +1655,7 @@ class _TrackMetadataScreenState extends ConsumerState<TrackMetadataScreen> {
   ) {
     final displayFilePath = _formatPathForDisplay(rawFilePath);
     final fileName = _extractFileNameFromPathOrUri(rawFilePath);
-    final fileExtension = fileName.contains('.')
-        ? fileName.split('.').last.toUpperCase()
-        : 'Unknown';
+    final fileExtension = _displayFormatLabelForFile(fileName);
     final resolvedQuality = _displayAudioQuality;
     final lossyBitrateLabel = _extractLossyBitrateLabel(resolvedQuality);
 
@@ -1694,9 +1728,7 @@ class _TrackMetadataScreenState extends ConsumerState<TrackMetadataScreen> {
                       ),
                     ),
                   ),
-                if ((fileExtension == 'MP3' ||
-                        fileExtension == 'OPUS' ||
-                        fileExtension == 'OGG') &&
+                if (_isBitrateFormatLabel(fileExtension) &&
                     lossyBitrateLabel != null)
                   Container(
                     padding: const EdgeInsets.symmetric(
@@ -1719,9 +1751,7 @@ class _TrackMetadataScreenState extends ConsumerState<TrackMetadataScreen> {
                 else if (_isLocalItem &&
                     _localBitrate != null &&
                     _localBitrate! > 0 &&
-                    (fileExtension == 'MP3' ||
-                        fileExtension == 'OPUS' ||
-                        fileExtension == 'OGG'))
+                    _isBitrateFormatLabel(fileExtension))
                   Container(
                     padding: const EdgeInsets.symmetric(
                       horizontal: 12,
@@ -3247,6 +3277,23 @@ class _TrackMetadataScreenState extends ConsumerState<TrackMetadataScreen> {
       if (format.startsWith('cue+')) {
         final audioFmt = format.substring(4).toUpperCase();
         return 'CUE+$audioFmt';
+      }
+    }
+    if (_isLocalItem && _localLibraryItem != null) {
+      final format = normalizeOptionalString(
+        _localLibraryItem!.format,
+      )?.toLowerCase().replaceAll('-', '_');
+      switch (format) {
+        case 'flac':
+          return 'FLAC';
+        case 'alac':
+        case 'm4a':
+          return 'M4A';
+        case 'mp3':
+          return 'MP3';
+        case 'opus':
+        case 'ogg':
+          return 'Opus';
       }
     }
     final lower = cleanFilePath.toLowerCase();

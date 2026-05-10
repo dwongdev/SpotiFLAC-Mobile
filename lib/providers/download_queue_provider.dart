@@ -73,15 +73,21 @@ String? _nonPlaceholderQuality(String? quality) {
 String? _resolveDisplayQuality({
   required String? filePath,
   String? fileName,
+  String? detectedFormat,
   int? bitDepth,
   int? sampleRate,
   int? bitrateKbps,
   String? storedQuality,
 }) {
-  final format = _audioFormatForPath(filePath, fileName: fileName);
+  final format =
+      _displayFormatForCodec(detectedFormat) ??
+      _audioFormatForPath(filePath, fileName: fileName);
   if (format == 'OPUS' ||
       format == 'MP3' ||
       format == 'AAC' ||
+      format == 'EAC3' ||
+      format == 'AC3' ||
+      format == 'AC4' ||
       (format == 'M4A' && (bitDepth == null || bitDepth <= 0))) {
     return buildDisplayAudioQuality(bitrateKbps: bitrateKbps, format: format) ??
         _nonPlaceholderQuality(storedQuality) ??
@@ -92,6 +98,23 @@ String? _resolveDisplayQuality({
     sampleRate: sampleRate,
     storedQuality: _nonPlaceholderQuality(storedQuality) ?? storedQuality,
   );
+}
+
+String? _displayFormatForCodec(String? value) {
+  final normalized = normalizeOptionalString(
+    value,
+  )?.toLowerCase().replaceAll('-', '_');
+  return switch (normalized) {
+    'flac' => 'FLAC',
+    'alac' => 'ALAC',
+    'aac' || 'mp4a' => 'AAC',
+    'eac3' || 'ec_3' => 'EAC3',
+    'ac3' || 'ac_3' => 'AC3',
+    'ac4' || 'ac_4' => 'AC4',
+    'mp3' => 'MP3',
+    'opus' => 'OPUS',
+    _ => null,
+  };
 }
 
 /// log10 helper using dart:math's natural log.
@@ -741,6 +764,8 @@ class DownloadHistoryNotifier extends Notifier<DownloadHistoryState> {
       final bitrateKbps = _readPositiveBitrateKbps(result['bitrate']);
       final quality = _resolveDisplayQuality(
         filePath: filePath,
+        detectedFormat:
+            result['audio_codec']?.toString() ?? result['format']?.toString(),
         bitDepth: bitDepth,
         sampleRate: sampleRate,
         bitrateKbps: bitrateKbps,

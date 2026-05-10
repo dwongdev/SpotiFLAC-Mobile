@@ -1101,7 +1101,7 @@ func CleanupConnections() {
 func ReadFileMetadata(filePath string) (string, error) {
 	lower := strings.ToLower(filePath)
 	isFlac := strings.HasSuffix(lower, ".flac")
-	isM4A := strings.HasSuffix(lower, ".m4a") || strings.HasSuffix(lower, ".aac")
+	isM4A := strings.HasSuffix(lower, ".m4a") || strings.HasSuffix(lower, ".mp4") || strings.HasSuffix(lower, ".aac")
 	isMp3 := strings.HasSuffix(lower, ".mp3")
 	isOgg := strings.HasSuffix(lower, ".opus") || strings.HasSuffix(lower, ".ogg")
 	isApe := strings.HasSuffix(lower, ".ape")
@@ -1126,9 +1126,13 @@ func ReadFileMetadata(filePath string) (string, error) {
 		"composer":     "",
 		"comment":      "",
 		"duration":     0,
+		"format":       "",
+		"audio_codec":  "",
 	}
 
 	if isFlac {
+		result["format"] = "flac"
+		result["audio_codec"] = "flac"
 		metadata, err := ReadMetadata(filePath)
 		if err != nil {
 			// File may have wrong extension (e.g. opus saved as .flac).
@@ -1161,6 +1165,8 @@ func ReadFileMetadata(filePath string) (string, error) {
 						result["bitrate"] = quality.Bitrate / 1000
 					}
 				}
+				result["format"] = "opus"
+				result["audio_codec"] = "opus"
 			} else {
 				return "", fmt.Errorf("failed to read metadata: %w", err)
 			}
@@ -1190,12 +1196,16 @@ func ReadFileMetadata(filePath string) (string, error) {
 			if qualityErr == nil {
 				result["bit_depth"] = quality.BitDepth
 				result["sample_rate"] = quality.SampleRate
+				if quality.Codec != "" {
+					result["audio_codec"] = quality.Codec
+				}
 				if quality.SampleRate > 0 && quality.TotalSamples > 0 {
 					result["duration"] = int(quality.TotalSamples / int64(quality.SampleRate))
 				}
 			}
 		}
 	} else if isM4A {
+		result["format"] = "m4a"
 		meta, err := ReadM4ATags(filePath)
 		if err == nil && meta != nil {
 			result["title"] = meta.Title
@@ -1227,8 +1237,17 @@ func ReadFileMetadata(filePath string) (string, error) {
 			result["bit_depth"] = quality.BitDepth
 			result["sample_rate"] = quality.SampleRate
 			result["duration"] = quality.Duration
+			result["audio_codec"] = quality.Codec
+			if format := libraryFormatForM4ACodec(quality.Codec); format != "" {
+				result["format"] = format
+			}
+			if quality.Bitrate > 0 && !isLosslessLibraryFormat(fmt.Sprint(result["format"])) {
+				result["bitrate"] = quality.Bitrate
+			}
 		}
 	} else if isMp3 {
+		result["format"] = "mp3"
+		result["audio_codec"] = "mp3"
 		meta, err := ReadID3Tags(filePath)
 		if err == nil && meta != nil {
 			result["title"] = meta.Title
@@ -1265,6 +1284,8 @@ func ReadFileMetadata(filePath string) (string, error) {
 			}
 		}
 	} else if isOgg {
+		result["format"] = "opus"
+		result["audio_codec"] = "opus"
 		meta, err := ReadOggVorbisComments(filePath)
 		if err == nil && meta != nil {
 			result["title"] = meta.Title
@@ -1300,6 +1321,8 @@ func ReadFileMetadata(filePath string) (string, error) {
 			}
 		}
 	} else if isApe || isWv || isMpc {
+		result["format"] = strings.TrimPrefix(filepath.Ext(filePath), ".")
+		result["audio_codec"] = result["format"]
 		// APE, WavPack, Musepack: read APEv2 tags
 		apeTag, apeErr := ReadAPETags(filePath)
 		if apeErr == nil && apeTag != nil {

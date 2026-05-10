@@ -96,6 +96,7 @@ object NativeDownloadFinalizer {
         ".ogg",
         ".wav",
         ".aac",
+        ".mp4",
     )
 
     private data class FinalizeInput(
@@ -113,6 +114,7 @@ object NativeDownloadFinalizer {
         var bitDepth: Int?,
         var sampleRate: Int?,
         var bitrateKbps: Int? = null,
+        var audioCodec: String? = null,
         var pendingExternalLrc: String? = null,
         var pendingExternalLrcFileName: String? = null,
     )
@@ -215,6 +217,7 @@ object NativeDownloadFinalizer {
 
             result.put("file_path", state.filePath)
             if (state.fileName.isNotBlank()) result.put("file_name", state.fileName)
+            if (state.quality.isNotBlank()) result.put("quality", state.quality)
             result.put("native_finalized", true)
             result.put("history_written", true)
             result.put("history_item", historyToJson(history))
@@ -652,6 +655,17 @@ object NativeDownloadFinalizer {
 
             val bitDepth = optPositiveInt(metadata, "bit_depth")
             val sampleRate = optPositiveInt(metadata, "sample_rate")
+            val probedCodec = normalizeAudioCodec(
+                metadata.optString("audio_codec", "").ifBlank {
+                    metadata.optString("codec", "").ifBlank {
+                        metadata.optString("format", "")
+                    }
+                }
+            )
+            if (probedCodec != null) {
+                state.audioCodec = probedCodec
+                result.put("audio_codec", probedCodec)
+            }
             if (bitDepth != null) {
                 state.bitDepth = bitDepth
                 result.put("actual_bit_depth", bitDepth)
@@ -673,6 +687,7 @@ object NativeDownloadFinalizer {
                 bitDepth = state.bitDepth,
                 sampleRate = state.sampleRate,
                 bitrateKbps = state.bitrateKbps,
+                audioCodec = state.audioCodec,
                 storedQuality = state.quality,
             )
             if (displayQuality != null) {
@@ -710,12 +725,16 @@ object NativeDownloadFinalizer {
         bitDepth: Int?,
         sampleRate: Int?,
         bitrateKbps: Int?,
+        audioCodec: String? = null,
         storedQuality: String?,
     ): String? {
-        val format = audioFormatForPath(filePath, fileName)
+        val format = audioFormatForCodec(audioCodec) ?: audioFormatForPath(filePath, fileName)
         if (format == "OPUS" ||
             format == "MP3" ||
             format == "AAC" ||
+            format == "EAC3" ||
+            format == "AC3" ||
+            format == "AC4" ||
             (format == "M4A" && (bitDepth == null || bitDepth <= 0))
         ) {
             return if (bitrateKbps != null && bitrateKbps > 0) {
@@ -732,6 +751,34 @@ object NativeDownloadFinalizer {
             return "$bitDepth-bit/${sampleRateLabel}kHz"
         }
         return nonPlaceholderQuality(storedQuality) ?: normalizeOptional(storedQuality)
+    }
+
+    private fun audioFormatForCodec(codec: String?): String? {
+        return when (normalizeAudioCodec(codec)) {
+            "flac" -> "FLAC"
+            "alac" -> "ALAC"
+            "aac" -> "AAC"
+            "eac3" -> "EAC3"
+            "ac3" -> "AC3"
+            "ac4" -> "AC4"
+            "mp3" -> "MP3"
+            "opus" -> "OPUS"
+            else -> null
+        }
+    }
+
+    private fun normalizeAudioCodec(codec: String?): String? {
+        val normalized = normalizeOptional(codec)
+            ?.lowercase(Locale.ROOT)
+            ?.replace('-', '_')
+            ?: return null
+        return when (normalized) {
+            "mp4a" -> "aac"
+            "ec_3" -> "eac3"
+            "ac_3" -> "ac3"
+            "ac_4" -> "ac4"
+            else -> normalized
+        }
     }
 
     private fun audioFormatForPath(filePath: String, fileName: String): String? {
@@ -1165,7 +1212,7 @@ object NativeDownloadFinalizer {
         return when (normalizeExt(File(path).extension)) {
             ".mp3" -> "mp3"
             ".opus", ".ogg" -> "opus"
-            ".m4a", ".mp4" -> "m4a"
+            ".m4a", ".mp4", ".aac" -> "m4a"
             else -> "flac"
         }
     }

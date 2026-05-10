@@ -34,7 +34,7 @@ class LocalLibraryItem {
   final String? composer;
   final String? label;
   final String? copyright;
-  final String? format; // flac, mp3, opus, m4a
+  final String? format; // flac, alac, eac3, ac3, ac4, mp3, opus, m4a
 
   const LocalLibraryItem({
     required this.id,
@@ -1299,6 +1299,7 @@ class LibraryDatabase {
       args,
       request,
       filePathExpr: 'h.file_path',
+      formatExpr: null,
       qualityExpr: 'h.quality',
       bitDepthExpr: 'h.bit_depth',
       artistExpr: 'h.artist_name',
@@ -1335,6 +1336,7 @@ class LibraryDatabase {
       args,
       request,
       filePathExpr: 'l.file_path',
+      formatExpr: 'l.format',
       qualityExpr: 'NULL',
       bitDepthExpr: 'l.bit_depth',
       artistExpr: 'l.artist_name',
@@ -1353,6 +1355,7 @@ class LibraryDatabase {
     List<Object?> args,
     QueueLibraryDbQuery request, {
     required String filePathExpr,
+    required String? formatExpr,
     required String qualityExpr,
     required String bitDepthExpr,
     required String artistExpr,
@@ -1385,8 +1388,15 @@ class LibraryDatabase {
 
     final format = request.format?.trim().toLowerCase();
     if (format != null && format.isNotEmpty) {
-      where.add('LOWER($filePathExpr) LIKE ?');
-      args.add('%.$format');
+      if (formatExpr == null) {
+        where.add('LOWER($filePathExpr) LIKE ?');
+        args.add('%.$format');
+      } else {
+        where.add(
+          '(LOWER(COALESCE($formatExpr, \'\')) = ? OR LOWER($filePathExpr) LIKE ?)',
+        );
+        args.addAll([format, '%.$format']);
+      }
     }
 
     final metadata = request.metadata?.trim();

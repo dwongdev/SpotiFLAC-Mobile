@@ -1486,6 +1486,14 @@ class _QueueTabState extends ConsumerState<QueueTab> {
     return filePath.substring(dotIndex + 1).toLowerCase();
   }
 
+  String _itemFormatLower(UnifiedLibraryItem item) {
+    final localFormat = normalizeOptionalString(item.localItem?.format);
+    if (localFormat != null) {
+      return localFormat.toLowerCase().replaceAll('-', '_');
+    }
+    return _fileExtLower(item.filePath);
+  }
+
   List<UnifiedLibraryItem> _applyAdvancedFilters(
     List<UnifiedLibraryItem> items,
   ) {
@@ -1523,7 +1531,7 @@ class _QueueTabState extends ConsumerState<QueueTab> {
             }
 
             if (_filterFormat != null) {
-              final ext = _fileExtLower(item.filePath);
+              final ext = _itemFormatLower(item);
               if (ext != _filterFormat) return false;
             }
 
@@ -1656,8 +1664,21 @@ class _QueueTabState extends ConsumerState<QueueTab> {
   Set<String> _getAvailableFormats(List<UnifiedLibraryItem> items) {
     final formats = <String>{};
     for (final item in items) {
-      final ext = _fileExtLower(item.filePath);
-      if (['flac', 'mp3', 'm4a', 'opus', 'ogg', 'wav', 'aiff'].contains(ext)) {
+      final ext = _itemFormatLower(item);
+      if ([
+        'flac',
+        'alac',
+        'mp3',
+        'm4a',
+        'aac',
+        'eac3',
+        'ac3',
+        'ac4',
+        'opus',
+        'ogg',
+        'wav',
+        'aiff',
+      ].contains(ext)) {
         formats.add(ext);
       }
     }
