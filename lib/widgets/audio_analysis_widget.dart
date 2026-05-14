@@ -15,10 +15,13 @@ import 'package:spotiflac_android/l10n/l10n.dart';
 import 'package:spotiflac_android/services/platform_bridge.dart';
 
 class AudioAnalysisData {
-  static const cacheVersion = 3;
+  static const cacheVersion = 4;
 
   final String filePath;
   final int fileSize;
+  final String codec;
+  final String container;
+  final String decodedSampleFormat;
   final int sampleRate;
   final int channels;
   final String channelLayout;
@@ -29,12 +32,20 @@ class AudioAnalysisData {
   final double dynamicRange;
   final double peakAmplitude;
   final double rmsLevel;
+  final double? integratedLufs;
+  final double? truePeakDb;
+  final int clippingSamples;
+  final double? spectralCutoffHz;
+  final List<ChannelAnalysisStats> channelStats;
   final int totalSamples;
   final SpectrogramData? spectrum;
 
   const AudioAnalysisData({
     required this.filePath,
     required this.fileSize,
+    this.codec = '',
+    this.container = '',
+    this.decodedSampleFormat = '',
     required this.sampleRate,
     required this.channels,
     this.channelLayout = '',
@@ -45,6 +56,11 @@ class AudioAnalysisData {
     required this.dynamicRange,
     required this.peakAmplitude,
     required this.rmsLevel,
+    this.integratedLufs,
+    this.truePeakDb,
+    this.clippingSamples = 0,
+    this.spectralCutoffHz,
+    this.channelStats = const [],
     required this.totalSamples,
     this.spectrum,
   });
@@ -53,6 +69,9 @@ class AudioAnalysisData {
     'filePath': filePath,
     'cacheVersion': cacheVersion,
     'fileSize': fileSize,
+    'codec': codec,
+    'container': container,
+    'decodedSampleFormat': decodedSampleFormat,
     'sampleRate': sampleRate,
     'channels': channels,
     'channelLayout': channelLayout,
@@ -63,6 +82,11 @@ class AudioAnalysisData {
     'dynamicRange': dynamicRange,
     'peakAmplitude': peakAmplitude,
     'rmsLevel': rmsLevel,
+    'integratedLufs': integratedLufs,
+    'truePeakDb': truePeakDb,
+    'clippingSamples': clippingSamples,
+    'spectralCutoffHz': spectralCutoffHz,
+    'channelStats': channelStats.map((stats) => stats.toJson()).toList(),
     'totalSamples': totalSamples,
   };
 
@@ -70,6 +94,9 @@ class AudioAnalysisData {
     return AudioAnalysisData(
       filePath: json['filePath'] as String,
       fileSize: json['fileSize'] as int,
+      codec: json['codec']?.toString() ?? '',
+      container: json['container']?.toString() ?? '',
+      decodedSampleFormat: json['decodedSampleFormat']?.toString() ?? '',
       sampleRate: json['sampleRate'] as int,
       channels: json['channels'] as int,
       channelLayout: json['channelLayout']?.toString() ?? '',
@@ -80,7 +107,51 @@ class AudioAnalysisData {
       dynamicRange: (json['dynamicRange'] as num).toDouble(),
       peakAmplitude: (json['peakAmplitude'] as num).toDouble(),
       rmsLevel: (json['rmsLevel'] as num).toDouble(),
+      integratedLufs: (json['integratedLufs'] as num?)?.toDouble(),
+      truePeakDb: (json['truePeakDb'] as num?)?.toDouble(),
+      clippingSamples: (json['clippingSamples'] as num?)?.toInt() ?? 0,
+      spectralCutoffHz: (json['spectralCutoffHz'] as num?)?.toDouble(),
+      channelStats:
+          (json['channelStats'] as List?)
+              ?.whereType<Map<dynamic, dynamic>>()
+              .map((item) => ChannelAnalysisStats.fromJson(item))
+              .toList() ??
+          const [],
       totalSamples: json['totalSamples'] as int,
+    );
+  }
+}
+
+class ChannelAnalysisStats {
+  final int channel;
+  final double? peakDb;
+  final double? rmsDb;
+  final double? dynamicRangeDb;
+  final int peakCount;
+
+  const ChannelAnalysisStats({
+    required this.channel,
+    this.peakDb,
+    this.rmsDb,
+    this.dynamicRangeDb,
+    this.peakCount = 0,
+  });
+
+  Map<String, dynamic> toJson() => {
+    'channel': channel,
+    'peakDb': peakDb,
+    'rmsDb': rmsDb,
+    'dynamicRangeDb': dynamicRangeDb,
+    'peakCount': peakCount,
+  };
+
+  factory ChannelAnalysisStats.fromJson(Map<dynamic, dynamic> json) {
+    return ChannelAnalysisStats(
+      channel: (json['channel'] as num?)?.toInt() ?? 0,
+      peakDb: (json['peakDb'] as num?)?.toDouble(),
+      rmsDb: (json['rmsDb'] as num?)?.toDouble(),
+      dynamicRangeDb: (json['dynamicRangeDb'] as num?)?.toDouble(),
+      peakCount: (json['peakCount'] as num?)?.toInt() ?? 0,
     );
   }
 }
@@ -380,15 +451,25 @@ class _AudioAnalysisCardState extends State<AudioAnalysisCard> {
           ),
         );
         final levelMetrics = await _runFullStreamLevelAnalysis(workingPath);
+        final loudnessMetrics = await _runLoudnessAnalysis(workingPath);
         final peakAmplitude =
             levelMetrics?.peakDb ?? spectrumResult.peakAmplitude;
         final rmsLevel = levelMetrics?.rmsDb ?? spectrumResult.rmsLevel;
         final dynamicRange =
             levelMetrics?.dynamicRangeDb ?? (peakAmplitude - rmsLevel);
+        final spectralCutoffHz = spectrumResult.spectrum == null
+            ? null
+            : await compute(
+                _estimateSpectralCutoffHz,
+                spectrumResult.spectrum!,
+              );
 
         return AudioAnalysisData(
           filePath: filePath,
           fileSize: info.fileSize,
+          codec: info.codec,
+          container: info.container,
+          decodedSampleFormat: info.decodedSampleFormat,
           sampleRate: info.sampleRate,
           channels: info.channels,
           channelLayout: info.channelLayout,
@@ -401,6 +482,11 @@ class _AudioAnalysisCardState extends State<AudioAnalysisCard> {
           dynamicRange: dynamicRange,
           peakAmplitude: peakAmplitude,
           rmsLevel: rmsLevel,
+          integratedLufs: loudnessMetrics?.integratedLufs,
+          truePeakDb: loudnessMetrics?.truePeakDb,
+          clippingSamples: levelMetrics?.clippingSamples ?? 0,
+          spectralCutoffHz: spectralCutoffHz,
+          channelStats: levelMetrics?.channelStats ?? const [],
           totalSamples: info.totalSamples,
           spectrum: spectrumResult.spectrum,
         );
@@ -439,6 +525,12 @@ class _AudioAnalysisCardState extends State<AudioAnalysisCard> {
     );
 
     final props = audioStream.getAllProperties() ?? {};
+    final infoProps = info.getAllProperties() ?? {};
+    final codecName = props['codec_name']?.toString().toLowerCase() ?? '';
+    final codecLongName = props['codec_long_name']?.toString() ?? '';
+    final decodedSampleFormat = props['sample_fmt']?.toString() ?? '';
+    final formatName = infoProps['format_name']?.toString() ?? '';
+    final formatLongName = infoProps['format_long_name']?.toString() ?? '';
     final sampleRate =
         int.tryParse(props['sample_rate']?.toString() ?? '') ?? 0;
     final channels = int.tryParse(props['channels']?.toString() ?? '') ?? 0;
@@ -460,7 +552,6 @@ class _AudioAnalysisCardState extends State<AudioAnalysisCard> {
         containerBitrate ??
         (duration > 0 && fileSize > 0 ? (fileSize * 8 / duration).round() : 0);
 
-    final codecName = props['codec_name']?.toString().toLowerCase() ?? '';
     final canReportStoredBitDepth = _codecHasStoredBitDepth(codecName);
 
     int bitsPerSample = 0;
@@ -490,6 +581,9 @@ class _AudioAnalysisCardState extends State<AudioAnalysisCard> {
 
     return _MediaInfo(
       fileSize: fileSize,
+      codec: _formatCodecLabel(codecName, codecLongName),
+      container: _formatContainerLabel(formatName, formatLongName),
+      decodedSampleFormat: decodedSampleFormat,
       sampleRate: sampleRate,
       channels: channels,
       channelLayout: channelLayout,
@@ -503,6 +597,23 @@ class _AudioAnalysisCardState extends State<AudioAnalysisCard> {
         channels: channels,
       ),
     );
+  }
+
+  String _formatCodecLabel(String codecName, String codecLongName) {
+    final name = codecName.trim();
+    final longName = codecLongName.trim();
+    if (name.isEmpty) return longName;
+    if (longName.isEmpty || longName.toLowerCase() == name.toLowerCase()) {
+      return name.toUpperCase();
+    }
+    return '${name.toUpperCase()} ($longName)';
+  }
+
+  String _formatContainerLabel(String formatName, String formatLongName) {
+    final longName = formatLongName.trim();
+    if (longName.isNotEmpty) return longName;
+    final name = formatName.trim();
+    return name.isEmpty ? '' : name.toUpperCase();
   }
 
   int _estimateTotalSamples({
@@ -578,14 +689,89 @@ class _AudioAnalysisCardState extends State<AudioAnalysisCard> {
       final peak = _parseLastAstatsValue(section, 'Peak level dB');
       final rms = _parseLastAstatsValue(section, 'RMS level dB');
       if (peak == null || rms == null) return null;
+      final channelStats = _parseChannelStats(logs);
+      final clippingSamples = channelStats.fold<int>(0, (sum, stats) {
+        if (stats.peakDb == null || stats.peakDb! < -0.1) return sum;
+        return sum + stats.peakCount;
+      });
       return _LevelMetrics(
         peakDb: peak,
         rmsDb: rms,
         dynamicRangeDb: _parseLastAstatsValue(section, 'Dynamic range'),
+        clippingSamples: clippingSamples,
+        channelStats: channelStats,
       );
     } finally {
       await FFmpegKitConfig.setLogLevel(Level.avLogError);
     }
+  }
+
+  Future<_LoudnessMetrics?> _runLoudnessAnalysis(String inputPath) async {
+    await FFmpegKitConfig.setLogLevel(Level.avLogInfo);
+    try {
+      final session = await FFmpegKit.executeWithArguments([
+        '-hide_banner',
+        '-nostats',
+        '-i',
+        inputPath,
+        '-filter_complex',
+        'ebur128=peak=true:framelog=quiet',
+        '-f',
+        'null',
+        '-',
+      ]);
+
+      final logs = await session.getLogsAsString();
+      final integratedMatches = RegExp(
+        r'I:\s+(-?\d+\.?\d*)\s+LUFS',
+      ).allMatches(logs);
+      final integrated = integratedMatches.isEmpty
+          ? null
+          : double.tryParse(integratedMatches.last.group(1) ?? '');
+
+      double? truePeak;
+      for (final match in RegExp(
+        r'Peak:\s+(-?\d+\.?\d*)\s+dBFS',
+      ).allMatches(logs)) {
+        final value = double.tryParse(match.group(1) ?? '');
+        if (value != null && (truePeak == null || value > truePeak)) {
+          truePeak = value;
+        }
+      }
+
+      if (integrated == null && truePeak == null) return null;
+      return _LoudnessMetrics(integratedLufs: integrated, truePeakDb: truePeak);
+    } finally {
+      await FFmpegKitConfig.setLogLevel(Level.avLogError);
+    }
+  }
+
+  List<ChannelAnalysisStats> _parseChannelStats(String logs) {
+    final stats = <ChannelAnalysisStats>[];
+    final channelMatches = RegExp(
+      r'Channel:\s*(\d+)([\s\S]*?)(?=Channel:\s*\d+|Overall|$)',
+      caseSensitive: false,
+    ).allMatches(logs);
+
+    for (final match in channelMatches) {
+      final channel = int.tryParse(match.group(1) ?? '') ?? 0;
+      final section = match.group(2) ?? '';
+      if (channel <= 0 || section.trim().isEmpty) continue;
+      stats.add(
+        ChannelAnalysisStats(
+          channel: channel,
+          peakDb: _parseLastAstatsValue(section, 'Peak level dB'),
+          rmsDb: _parseLastAstatsValue(section, 'RMS level dB'),
+          dynamicRangeDb: _parseLastAstatsValue(section, 'Dynamic range'),
+          peakCount:
+              _parseLastAstatsInt(section, 'Peak count') ??
+              _parseLastAstatsInt(section, 'Peak count ch') ??
+              0,
+        ),
+      );
+    }
+
+    return stats;
   }
 
   double? _parseLastAstatsValue(String text, String label) {
@@ -599,6 +785,18 @@ class _AudioAnalysisCardState extends State<AudioAnalysisCard> {
       if (parsed != null && parsed.isFinite) {
         value = parsed;
       }
+    }
+    return value;
+  }
+
+  int? _parseLastAstatsInt(String text, String label) {
+    final matches = RegExp(
+      '${RegExp.escape(label)}:\\s*(\\d+)',
+      caseSensitive: false,
+    ).allMatches(text);
+    int? value;
+    for (final match in matches) {
+      value = int.tryParse(match.group(1) ?? '') ?? value;
     }
     return value;
   }
@@ -794,6 +992,9 @@ class _AudioAnalysisCardState extends State<AudioAnalysisCard> {
 
 class _MediaInfo {
   final int fileSize;
+  final String codec;
+  final String container;
+  final String decodedSampleFormat;
   final int sampleRate;
   final int channels;
   final String channelLayout;
@@ -804,6 +1005,9 @@ class _MediaInfo {
 
   const _MediaInfo({
     required this.fileSize,
+    required this.codec,
+    required this.container,
+    required this.decodedSampleFormat,
     required this.sampleRate,
     required this.channels,
     required this.channelLayout,
@@ -818,12 +1022,23 @@ class _LevelMetrics {
   final double peakDb;
   final double rmsDb;
   final double? dynamicRangeDb;
+  final int clippingSamples;
+  final List<ChannelAnalysisStats> channelStats;
 
   const _LevelMetrics({
     required this.peakDb,
     required this.rmsDb,
     this.dynamicRangeDb,
+    this.clippingSamples = 0,
+    this.channelStats = const [],
   });
+}
+
+class _LoudnessMetrics {
+  final double? integratedLufs;
+  final double? truePeakDb;
+
+  const _LoudnessMetrics({this.integratedLufs, this.truePeakDb});
 }
 
 class _AnalysisParams {
@@ -938,6 +1153,40 @@ SpectrogramData _computeSpectrum(Float64List samples, int sampleRate) {
   );
 }
 
+double? _estimateSpectralCutoffHz(SpectrogramData spectrum) {
+  if (spectrum.magnitudes.isEmpty || spectrum.freqBins <= 0) return null;
+
+  final averages = Float64List(spectrum.freqBins);
+  for (final slice in spectrum.magnitudes) {
+    final limit = math.min(slice.length, spectrum.freqBins);
+    for (int i = 0; i < limit; i++) {
+      averages[i] += slice[i];
+    }
+  }
+
+  var peak = -double.infinity;
+  final startBin = math.max(
+    1,
+    (20 / spectrum.maxFreq * spectrum.freqBins).floor(),
+  );
+  for (int i = startBin; i < averages.length; i++) {
+    averages[i] /= spectrum.magnitudes.length;
+    if (averages[i] > peak) peak = averages[i];
+  }
+  if (!peak.isFinite) return null;
+
+  final threshold = peak - 60.0;
+  var cutoffBin = 0;
+  for (int i = averages.length - 1; i >= startBin; i--) {
+    if (averages[i] >= threshold) {
+      cutoffBin = i;
+      break;
+    }
+  }
+  if (cutoffBin <= 0) return null;
+  return cutoffBin / spectrum.freqBins * spectrum.maxFreq;
+}
+
 /// Cooley-Tukey radix-2 FFT. Returns interleaved [re, im, re, im, ...].
 Float64List _fft(Float64List realInput) {
   final n = realInput.length;
@@ -1048,6 +1297,20 @@ class _AudioInfoCard extends StatelessWidget {
               spacing: 16,
               runSpacing: 8,
               children: [
+                if (data.codec.isNotEmpty)
+                  _MetricChip(
+                    icon: Icons.memory,
+                    label: context.l10n.audioAnalysisCodec,
+                    value: data.codec,
+                    cs: cs,
+                  ),
+                if (data.container.isNotEmpty)
+                  _MetricChip(
+                    icon: Icons.inventory_2_outlined,
+                    label: context.l10n.audioAnalysisContainer,
+                    value: data.container,
+                    cs: cs,
+                  ),
                 _MetricChip(
                   icon: Icons.graphic_eq,
                   label: context.l10n.audioAnalysisSampleRate,
@@ -1060,6 +1323,13 @@ class _AudioInfoCard extends StatelessWidget {
                   value: data.bitDepth,
                   cs: cs,
                 ),
+                if (data.decodedSampleFormat.isNotEmpty)
+                  _MetricChip(
+                    icon: Icons.data_object,
+                    label: context.l10n.audioAnalysisDecodedFormat,
+                    value: data.decodedSampleFormat,
+                    cs: cs,
+                  ),
                 if (data.bitrate > 0)
                   _MetricChip(
                     icon: Icons.speed,
@@ -1119,6 +1389,33 @@ class _AudioInfoCard extends StatelessWidget {
                   value: '${data.rmsLevel.toStringAsFixed(2)} dB',
                   cs: cs,
                 ),
+                if (data.integratedLufs != null)
+                  _MetricChip(
+                    icon: Icons.volume_up_outlined,
+                    label: context.l10n.audioAnalysisLufs,
+                    value: '${data.integratedLufs!.toStringAsFixed(1)} LUFS',
+                    cs: cs,
+                  ),
+                if (data.truePeakDb != null)
+                  _MetricChip(
+                    icon: Icons.warning_amber_outlined,
+                    label: context.l10n.audioAnalysisTruePeak,
+                    value: '${data.truePeakDb!.toStringAsFixed(2)} dBTP',
+                    cs: cs,
+                  ),
+                _MetricChip(
+                  icon: Icons.report_gmailerrorred_outlined,
+                  label: context.l10n.audioAnalysisClipping,
+                  value: _formatClipping(context, data.clippingSamples),
+                  cs: cs,
+                ),
+                if (data.spectralCutoffHz != null)
+                  _MetricChip(
+                    icon: Icons.filter_alt_outlined,
+                    label: context.l10n.audioAnalysisSpectralCutoff,
+                    value: _formatFrequency(data.spectralCutoffHz!),
+                    cs: cs,
+                  ),
                 _MetricChip(
                   icon: Icons.numbers,
                   label: context.l10n.audioAnalysisSamples,
@@ -1127,6 +1424,32 @@ class _AudioInfoCard extends StatelessWidget {
                 ),
               ],
             ),
+            if (data.channelStats.length > 1) ...[
+              const SizedBox(height: 8),
+              Divider(color: cs.outlineVariant),
+              const SizedBox(height: 8),
+              Text(
+                context.l10n.audioAnalysisChannelStats,
+                style: TextStyle(
+                  color: cs.onSurfaceVariant,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Wrap(
+                spacing: 12,
+                runSpacing: 8,
+                children: data.channelStats.map((stats) {
+                  return _MetricChip(
+                    icon: Icons.surround_sound,
+                    label: 'Ch ${stats.channel}',
+                    value: _formatChannelStats(stats),
+                    cs: cs,
+                  );
+                }).toList(),
+              ),
+            ],
           ],
         ),
       ),
@@ -1157,11 +1480,38 @@ class _AudioInfoCard extends StatelessWidget {
     return '${size.toStringAsFixed(1)} ${units[i]}';
   }
 
+  String _formatFrequency(double hz) {
+    if (hz >= 1000) return '${(hz / 1000).toStringAsFixed(1)} kHz';
+    return '${hz.round()} Hz';
+  }
+
   String _formatBitrate(int bitsPerSecond) {
     if (bitsPerSecond >= 1000000) {
       return '${(bitsPerSecond / 1000000).toStringAsFixed(2)} Mbps';
     }
     return '${(bitsPerSecond / 1000).round()} kbps';
+  }
+
+  String _formatClipping(BuildContext context, int samples) {
+    if (samples <= 0) return context.l10n.audioAnalysisNoClipping;
+    return _formatNumber(samples);
+  }
+
+  String _formatChannelStats(ChannelAnalysisStats stats) {
+    final parts = <String>[];
+    if (stats.peakDb != null) {
+      parts.add('P ${stats.peakDb!.toStringAsFixed(1)}');
+    }
+    if (stats.rmsDb != null) {
+      parts.add('R ${stats.rmsDb!.toStringAsFixed(1)}');
+    }
+    if (stats.dynamicRangeDb != null) {
+      parts.add('DR ${stats.dynamicRangeDb!.toStringAsFixed(1)}');
+    }
+    if (stats.peakCount > 0 && (stats.peakDb ?? -100) >= -0.1) {
+      parts.add('Clip ${_formatNumber(stats.peakCount)}');
+    }
+    return parts.isEmpty ? 'N/A' : parts.join(' / ');
   }
 
   String _formatNumber(int n) {
@@ -1186,24 +1536,30 @@ class _MetricChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(icon, size: 14, color: cs.onSurfaceVariant),
-        const SizedBox(width: 4),
-        Text(
-          '$label: ',
-          style: TextStyle(color: cs.onSurfaceVariant, fontSize: 12),
-        ),
-        Text(
-          value,
-          style: TextStyle(
-            color: cs.onSurface,
-            fontSize: 12,
-            fontWeight: FontWeight.w600,
+    return ConstrainedBox(
+      constraints: const BoxConstraints(maxWidth: 320),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 14, color: cs.onSurfaceVariant),
+          const SizedBox(width: 4),
+          Text(
+            '$label: ',
+            style: TextStyle(color: cs.onSurfaceVariant, fontSize: 12),
           ),
-        ),
-      ],
+          Flexible(
+            child: Text(
+              value,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                color: cs.onSurface,
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

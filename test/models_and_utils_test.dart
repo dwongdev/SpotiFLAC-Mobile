@@ -428,23 +428,20 @@ void main() {
   });
 
   group('audio conversion utils', () {
-    test('detects Dolby formats from stored scan format before file extension', () {
-      expect(
-        convertibleAudioSourceFormat(
-          storedFormat: 'eac3',
-          filePath: 'content://media/song.m4a',
-        ),
-        'EAC3',
-      );
-      expect(
-        convertibleAudioSourceFormat(fileName: 'Song.ac-3'),
-        'AC3',
-      );
-      expect(
-        convertibleAudioSourceFormat(storedFormat: 'ac4'),
-        'AC4',
-      );
-    });
+    test(
+      'detects Dolby formats from stored scan format before file extension',
+      () {
+        expect(
+          convertibleAudioSourceFormat(
+            storedFormat: 'eac3',
+            filePath: 'content://media/song.m4a',
+          ),
+          'EAC3',
+        );
+        expect(convertibleAudioSourceFormat(fileName: 'Song.ac-3'), 'AC3');
+        expect(convertibleAudioSourceFormat(storedFormat: 'ac4'), 'AC4');
+      },
+    );
 
     test('allows Dolby sources only for lossy batch conversion targets', () {
       expect(

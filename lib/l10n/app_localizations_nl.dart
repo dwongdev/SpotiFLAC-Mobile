@@ -3285,6 +3285,15 @@ class AppLocalizationsNl extends AppLocalizations {
   String get audioAnalysisSampleRate => 'Sample Rate';
 
   @override
+  String get audioAnalysisCodec => 'Codec';
+
+  @override
+  String get audioAnalysisContainer => 'Container';
+
+  @override
+  String get audioAnalysisDecodedFormat => 'Decoded Format';
+
+  @override
   String get audioAnalysisBitDepth => 'Bit Depth';
 
   @override
@@ -3307,6 +3316,24 @@ class AppLocalizationsNl extends AppLocalizations {
 
   @override
   String get audioAnalysisRms => 'RMS';
+
+  @override
+  String get audioAnalysisLufs => 'LUFS';
+
+  @override
+  String get audioAnalysisTruePeak => 'True Peak';
+
+  @override
+  String get audioAnalysisClipping => 'Clipping';
+
+  @override
+  String get audioAnalysisNoClipping => 'No clipping';
+
+  @override
+  String get audioAnalysisSpectralCutoff => 'Spectral Cutoff';
+
+  @override
+  String get audioAnalysisChannelStats => 'Per-channel Stats';
 
   @override
   String get audioAnalysisSamples => 'Samples';

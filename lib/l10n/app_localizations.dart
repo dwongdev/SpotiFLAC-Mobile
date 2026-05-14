@@ -5599,6 +5599,24 @@ abstract class AppLocalizations {
   /// **'Sample Rate'**
   String get audioAnalysisSampleRate;
 
+  /// Audio codec metric label
+  ///
+  /// In en, this message translates to:
+  /// **'Codec'**
+  String get audioAnalysisCodec;
+
+  /// Audio container metric label
+  ///
+  /// In en, this message translates to:
+  /// **'Container'**
+  String get audioAnalysisContainer;
+
+  /// Decoded sample format metric label
+  ///
+  /// In en, this message translates to:
+  /// **'Decoded Format'**
+  String get audioAnalysisDecodedFormat;
+
   /// Bit depth metric label
   ///
   /// In en, this message translates to:
@@ -5646,6 +5664,42 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'RMS'**
   String get audioAnalysisRms;
+
+  /// Integrated loudness metric label
+  ///
+  /// In en, this message translates to:
+  /// **'LUFS'**
+  String get audioAnalysisLufs;
+
+  /// True peak metric label
+  ///
+  /// In en, this message translates to:
+  /// **'True Peak'**
+  String get audioAnalysisTruePeak;
+
+  /// Clipping metric label
+  ///
+  /// In en, this message translates to:
+  /// **'Clipping'**
+  String get audioAnalysisClipping;
+
+  /// Displayed when no clipped samples were detected
+  ///
+  /// In en, this message translates to:
+  /// **'No clipping'**
+  String get audioAnalysisNoClipping;
+
+  /// Estimated spectral cutoff metric label
+  ///
+  /// In en, this message translates to:
+  /// **'Spectral Cutoff'**
+  String get audioAnalysisSpectralCutoff;
+
+  /// Per-channel audio analysis section label
+  ///
+  /// In en, this message translates to:
+  /// **'Per-channel Stats'**
+  String get audioAnalysisChannelStats;
 
   /// Total samples metric label
   ///

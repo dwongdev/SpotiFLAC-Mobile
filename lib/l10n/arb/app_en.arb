@@ -4272,6 +4272,18 @@
   "@audioAnalysisSampleRate": {
     "description": "Sample rate metric label"
   },
+  "audioAnalysisCodec": "Codec",
+  "@audioAnalysisCodec": {
+    "description": "Audio codec metric label"
+  },
+  "audioAnalysisContainer": "Container",
+  "@audioAnalysisContainer": {
+    "description": "Audio container metric label"
+  },
+  "audioAnalysisDecodedFormat": "Decoded Format",
+  "@audioAnalysisDecodedFormat": {
+    "description": "Decoded sample format metric label"
+  },
   "audioAnalysisBitDepth": "Bit Depth",
   "@audioAnalysisBitDepth": {
     "description": "Bit depth metric label"
@@ -4303,6 +4315,30 @@
   "audioAnalysisRms": "RMS",
   "@audioAnalysisRms": {
     "description": "RMS level metric label"
+  },
+  "audioAnalysisLufs": "LUFS",
+  "@audioAnalysisLufs": {
+    "description": "Integrated loudness metric label"
+  },
+  "audioAnalysisTruePeak": "True Peak",
+  "@audioAnalysisTruePeak": {
+    "description": "True peak metric label"
+  },
+  "audioAnalysisClipping": "Clipping",
+  "@audioAnalysisClipping": {
+    "description": "Clipping metric label"
+  },
+  "audioAnalysisNoClipping": "No clipping",
+  "@audioAnalysisNoClipping": {
+    "description": "Displayed when no clipped samples were detected"
+  },
+  "audioAnalysisSpectralCutoff": "Spectral Cutoff",
+  "@audioAnalysisSpectralCutoff": {
+    "description": "Estimated spectral cutoff metric label"
+  },
+  "audioAnalysisChannelStats": "Per-channel Stats",
+  "@audioAnalysisChannelStats": {
+    "description": "Per-channel audio analysis section label"
   },
   "audioAnalysisSamples": "Samples",
   "@audioAnalysisSamples": {
