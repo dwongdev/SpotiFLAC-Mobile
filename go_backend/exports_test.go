@@ -407,6 +407,62 @@ func TestSelectBestReEnrichTrackPrefersCandidateWithReleaseDate(t *testing.T) {
 	}
 }
 
+func TestSelectBestReEnrichTrackRejectsMismatchedSearchResults(t *testing.T) {
+	req := reEnrichRequest{
+		TrackName:  "Song Title",
+		ArtistName: "Artist Name",
+		AlbumName:  "Album Name",
+		DurationMs: 180000,
+	}
+
+	tracks := []ExtTrackMetadata{
+		{
+			ID:          "wrong-rich-metadata",
+			Name:        "Different Song",
+			Artists:     "Different Artist",
+			AlbumName:   "Album Name",
+			DurationMS:  180000,
+			ReleaseDate: "2024-03-09",
+			TrackNumber: 4,
+			DiscNumber:  1,
+			ISRC:        "WRONG1234567",
+			ProviderID:  "deezer",
+		},
+	}
+
+	if best := selectBestReEnrichTrack(req, tracks); best != nil {
+		t.Fatalf("selected track = %q, want no match", best.ID)
+	}
+}
+
+func TestSelectBestReEnrichTrackAllowsExactISRCDespiteMetadataMismatch(t *testing.T) {
+	req := reEnrichRequest{
+		TrackName:  "Song Title",
+		ArtistName: "Artist Name",
+		ISRC:       "USRC17607839",
+		DurationMs: 999999000,
+	}
+
+	tracks := []ExtTrackMetadata{
+		{
+			ID:         "same-isrc",
+			Name:       "Different Song",
+			Artists:    "Different Artist",
+			DurationMS: 180000,
+			ISRC:       "USRC17607839",
+			ProviderID: "deezer",
+		},
+	}
+
+	best := selectBestReEnrichTrack(req, tracks)
+	if best == nil {
+		t.Fatal("expected exact ISRC candidate to be selected")
+	}
+	if best.ID != "same-isrc" {
+		t.Fatalf("selected track = %q, want exact ISRC candidate", best.ID)
+	}
+}
+
 func TestBuildReEnrichFFmpegMetadataOmitsEmptyFields(t *testing.T) {
 	req := reEnrichRequest{
 		TrackName:   "Song",

@@ -131,14 +131,18 @@ func TestLyricsCacheParsingAndLRCLibClient(t *testing.T) {
 }
 
 func TestExternalLyricsProvidersWithFakeHTTP(t *testing.T) {
+	clearAppleMusicToken()
+	defer clearAppleMusicToken()
+
 	paxJSON := `{"type":"Syllable","content":[{"timestamp":1000,"oppositeTurn":true,"background":true,"text":[{"text":"Hel","part":true,"timestamp":1000},{"text":"lo","part":false,"timestamp":1200,"endtime":1500}],"backgroundText":[{"text":"bg","part":false,"timestamp":900}]}]}`
 	apple := &AppleMusicClient{httpClient: &http.Client{Transport: roundTripFunc(func(req *http.Request) (*http.Response, error) {
 		switch {
-		case strings.Contains(req.URL.Path, "/apple-music/search"):
-			if req.URL.Query().Get("q") == "bad" {
-				return &http.Response{StatusCode: 500, Header: make(http.Header), Body: io.NopCloser(strings.NewReader(`error`)), Request: req}, nil
-			}
-			return &http.Response{StatusCode: 200, Header: make(http.Header), Body: io.NopCloser(strings.NewReader(`[{"id":"apple-2","songName":"Other","artistName":"Other","duration":1000},{"id":"apple-1","songName":"Song","artistName":"Artist","albumName":"Album","duration":180000}]`)), Request: req}, nil
+		case req.URL.Host == "beta.music.apple.com" && (req.URL.Path == "" || req.URL.Path == "/"):
+			return &http.Response{StatusCode: 200, Header: make(http.Header), Body: io.NopCloser(strings.NewReader(`<script src="/assets/index~test.js"></script>`)), Request: req}, nil
+		case req.URL.Host == "beta.music.apple.com" && req.URL.Path == "/assets/index~test.js":
+			return &http.Response{StatusCode: 200, Header: make(http.Header), Body: io.NopCloser(strings.NewReader(`const token="eyJhbGci.test";`)), Request: req}, nil
+		case req.URL.Host == "amp-api.music.apple.com" && strings.Contains(req.URL.Path, "/v1/catalog/us/search"):
+			return &http.Response{StatusCode: 200, Header: make(http.Header), Body: io.NopCloser(strings.NewReader(`{"results":{"songs":{"data":[{"id":"apple-2"},{"id":"apple-1"}]}},"resources":{"songs":{"apple-2":{"attributes":{"name":"Other","artistName":"Other","durationInMillis":1000}},"apple-1":{"attributes":{"name":"Song","artistName":"Artist","albumName":"Album","durationInMillis":180000}}}}}`)), Request: req}, nil
 		case strings.Contains(req.URL.Path, "/apple-music/lyrics"):
 			return &http.Response{StatusCode: 200, Header: make(http.Header), Body: io.NopCloser(strings.NewReader(paxJSON)), Request: req}, nil
 		default:
@@ -176,6 +180,9 @@ func TestExternalLyricsProvidersWithFakeHTTP(t *testing.T) {
 	}
 	if !strings.Contains(elrc, "<00:") {
 		t.Fatalf("elrc pax should include inline word timing: %q", elrc)
+	}
+	if preferred, err := formatPaxLyricsToLRC(`{"elrcMultiPerson":"[00:01.00]v1:<00:01.00>Hello","content":[{"timestamp":1000,"text":[{"text":"Fallback","part":false}]}]}`, true, true); err != nil || !strings.Contains(preferred, "Hello") {
+		t.Fatalf("preferred apple elrc = %q/%v", preferred, err)
 	}
 	if _, err := apple.SearchSong("", "", 0); err == nil {
 		t.Fatal("expected empty apple search error")

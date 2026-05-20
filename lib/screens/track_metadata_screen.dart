@@ -2921,7 +2921,8 @@ class _TrackMetadataScreenState extends ConsumerState<TrackMetadataScreen> {
     if (!_fileExists) return;
 
     try {
-      final artistTagMode = ref.read(settingsProvider).artistTagMode;
+      final settings = ref.read(settingsProvider);
+      final artistTagMode = settings.artistTagMode;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(context.l10n.trackReEnrichSearching)),
       );
@@ -2931,7 +2932,7 @@ class _TrackMetadataScreenState extends ConsumerState<TrackMetadataScreen> {
         'file_path': cleanFilePath,
         'cover_url': _coverUrl ?? '',
         'max_quality': true,
-        'embed_lyrics': true,
+        'embed_lyrics': settings.embedLyrics,
         'artist_tag_mode': artistTagMode,
         'spotify_id': _spotifyId ?? '',
         'track_name': trackName,

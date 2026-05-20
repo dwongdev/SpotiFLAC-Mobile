@@ -883,12 +883,13 @@ class _LocalAlbumScreenState extends ConsumerState<LocalAlbumScreen> {
     List<String>? updateFields,
   }) async {
     final durationMs = (item.duration ?? 0) * 1000;
-    final artistTagMode = ref.read(settingsProvider).artistTagMode;
+    final settings = ref.read(settingsProvider);
+    final artistTagMode = settings.artistTagMode;
     final request = <String, dynamic>{
       'file_path': item.filePath,
       'cover_url': '',
       'max_quality': true,
-      'embed_lyrics': true,
+      'embed_lyrics': settings.embedLyrics,
       'artist_tag_mode': artistTagMode,
       'spotify_id': '',
       'track_name': item.trackName,

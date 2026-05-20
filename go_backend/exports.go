@@ -600,6 +600,10 @@ func selectBestReEnrichTrack(req reEnrichRequest, tracks []ExtTrackMetadata) *Ex
 	for i := range tracks {
 		track := &tracks[i]
 		score := 0
+		exactISRCMatch := currentISRC != "" && strings.EqualFold(currentISRC, strings.TrimSpace(track.ISRC))
+		titleMatches := req.TrackName != "" && track.Name != "" && titlesMatch(req.TrackName, track.Name)
+		artistMatches := req.ArtistName != "" && track.Artists != "" && artistsMatch(req.ArtistName, track.Artists)
+		albumMatches := currentAlbum != "" && track.AlbumName != "" && titlesMatch(currentAlbum, track.AlbumName)
 
 		resolved := resolvedTrackInfo{
 			Title:      track.Name,
@@ -607,22 +611,39 @@ func selectBestReEnrichTrack(req reEnrichRequest, tracks []ExtTrackMetadata) *Ex
 			ISRC:       track.ISRC,
 			Duration:   track.DurationMS / 1000,
 		}
-		if trackMatchesRequest(downloadReq, resolved, "ReEnrich") {
+		verified := trackMatchesRequest(downloadReq, resolved, "ReEnrich")
+
+		if !exactISRCMatch {
+			if req.TrackName != "" && !titleMatches {
+				continue
+			}
+			if req.ArtistName != "" && !artistMatches {
+				continue
+			}
+			if req.TrackName == "" && req.ArtistName == "" && currentAlbum != "" && !albumMatches {
+				continue
+			}
+			if req.TrackName == "" && req.ArtistName == "" && currentAlbum == "" && !verified {
+				continue
+			}
+		}
+
+		if verified {
 			score += 2000
 		}
 
-		if currentISRC != "" && strings.EqualFold(currentISRC, strings.TrimSpace(track.ISRC)) {
+		if exactISRCMatch {
 			score += 10000
 		}
-		if req.TrackName != "" && track.Name != "" && titlesMatch(req.TrackName, track.Name) {
+		if titleMatches {
 			score += 400
 		}
-		if req.ArtistName != "" && track.Artists != "" && artistsMatch(req.ArtistName, track.Artists) {
+		if artistMatches {
 			score += 320
 		}
 		if currentAlbum != "" && track.AlbumName != "" {
 			switch {
-			case titlesMatch(currentAlbum, track.AlbumName):
+			case albumMatches:
 				score += 120
 			case strings.Contains(strings.ToLower(track.AlbumName), strings.ToLower(currentAlbum)),
 				strings.Contains(strings.ToLower(currentAlbum), strings.ToLower(track.AlbumName)):

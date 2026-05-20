@@ -599,6 +599,54 @@ class _EditMetadataSheetState extends State<_EditMetadataSheet> {
     return score;
   }
 
+  bool _metadataTextMatches(String current, String candidate) {
+    if (current.isEmpty || candidate.isEmpty) return false;
+    return current == candidate ||
+        candidate.contains(current) ||
+        current.contains(candidate);
+  }
+
+  bool _metadataMatchIsConfident(
+    Map<String, dynamic> track, {
+    required String currentTitle,
+    required String currentArtist,
+    required String currentAlbum,
+    required String currentIsrc,
+  }) {
+    final candidateIsrc = (track['isrc']?.toString() ?? '')
+        .trim()
+        .toUpperCase();
+    if (currentIsrc.isNotEmpty && candidateIsrc == currentIsrc) {
+      return true;
+    }
+
+    final candidateTitle = _normalizeMetadataText(
+      (track['name'] ?? track['title'] ?? '').toString(),
+    );
+    final candidateArtist = _normalizeMetadataText(
+      (track['artists'] ?? track['artist'] ?? '').toString(),
+    );
+    final candidateAlbum = _normalizeMetadataText(
+      (track['album_name'] ?? track['album'] ?? '').toString(),
+    );
+
+    final titleMatches = _metadataTextMatches(currentTitle, candidateTitle);
+    final artistMatches = _metadataTextMatches(currentArtist, candidateArtist);
+    final albumMatches = _metadataTextMatches(currentAlbum, candidateAlbum);
+
+    if (currentTitle.isNotEmpty && currentArtist.isNotEmpty) {
+      return titleMatches && artistMatches;
+    }
+    if (currentTitle.isNotEmpty && currentAlbum.isNotEmpty) {
+      return titleMatches && albumMatches;
+    }
+    if (currentTitle.isNotEmpty) {
+      return titleMatches;
+    }
+
+    return false;
+  }
+
   Future<void> _fetchAndFill() async {
     if (_autoFillFields.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -682,6 +730,24 @@ class _EditMetadataSheetState extends State<_EditMetadataSheet> {
             bestScore = score;
             best = result;
           }
+        }
+
+        if (best != null &&
+            !_metadataMatchIsConfident(
+              best,
+              currentTitle: normalizedTitle,
+              currentArtist: normalizedArtist,
+              currentAlbum: normalizedAlbum,
+              currentIsrc: currentIsrc,
+            )) {
+          best = null;
+        }
+
+        if (best == null) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(context.l10n.editMetadataAutoFillNoResults)),
+          );
+          return;
         }
       }
 

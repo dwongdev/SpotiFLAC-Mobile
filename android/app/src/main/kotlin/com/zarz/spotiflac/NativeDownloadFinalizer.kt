@@ -1081,10 +1081,11 @@ object NativeDownloadFinalizer {
         val genre = resultString(input, "genre").ifBlank { requestString(input, "genre") }
         val label = resultString(input, "label").ifBlank { requestString(input, "label") }
         val copyright = resultString(input, "copyright").ifBlank { requestString(input, "copyright") }
-        val lyrics = resolveLyricsLrc(input)
-        val shouldEmbedLyrics = input.request.optBoolean("embed_lyrics", false) &&
-            (input.request.optString("lyrics_mode", "embed") == "embed" ||
-                input.request.optString("lyrics_mode", "embed") == "both") &&
+        val lyricsMode = input.request.optString("lyrics_mode", "embed")
+        val shouldResolveLyrics = input.request.optBoolean("embed_lyrics", false) &&
+            (lyricsMode == "embed" || lyricsMode == "both")
+        val lyrics = if (shouldResolveLyrics) resolveLyricsLrc(input) else ""
+        val shouldEmbedLyrics = shouldResolveLyrics &&
             lyrics.isNotBlank() &&
             lyrics != "[instrumental:true]"
         if (format == "flac") {
