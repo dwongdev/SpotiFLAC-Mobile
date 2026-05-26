@@ -1942,7 +1942,7 @@
   "@extensionsNoMetadataProvider": {
     "description": "Empty state - no metadata providers"
   },
-  "extensionsSearchProvider": "Search Provider",
+  "extensionsSearchProvider": "Moteur de recherche",
   "@extensionsSearchProvider": {
     "description": "Setting - search provider selection"
   },
@@ -2138,11 +2138,11 @@
   "@albumFolderAlbumOnly": {
     "description": "Album folder option"
   },
-  "albumFolderAlbumOnlySubtitle": "Albums/Album Name/",
+  "albumFolderAlbumOnlySubtitle": "Albums/Nom de l'album/",
   "@albumFolderAlbumOnlySubtitle": {
     "description": "Folder structure example"
   },
-  "albumFolderYearAlbum": "[Year] Album",
+  "albumFolderYearAlbum": "[Année] Album",
   "@albumFolderYearAlbum": {
     "description": "Album folder option with year"
   },
@@ -2379,11 +2379,11 @@
   "@allFilesAccess": {
     "description": "Toggle for MANAGE_EXTERNAL_STORAGE permission"
   },
-  "allFilesAccessEnabledSubtitle": "Can write to any folder",
+  "allFilesAccessEnabledSubtitle": "Peut écrire dans n'importe quel dossier",
   "@allFilesAccessEnabledSubtitle": {
     "description": "Subtitle when all files access is enabled"
   },
-  "allFilesAccessDisabledSubtitle": "Limited to media folders only",
+  "allFilesAccessDisabledSubtitle": "Réservé aux dossiers multimédias uniquement",
   "@allFilesAccessDisabledSubtitle": {
     "description": "Subtitle when all files access is disabled"
   },
@@ -2403,7 +2403,7 @@
   "@settingsLocalLibrary": {
     "description": "Settings menu item - local library"
   },
-  "settingsLocalLibrarySubtitle": "Scan music & detect duplicates",
+  "settingsLocalLibrarySubtitle": "Analysez la musique et détectez les doublons",
   "@settingsLocalLibrarySubtitle": {
     "description": "Subtitle for local library settings"
   },
@@ -2479,7 +2479,7 @@
   "@libraryScan": {
     "description": "Button to start library scan"
   },
-  "libraryScanSubtitle": "Scan for audio files",
+  "libraryScanSubtitle": "Recherchez des fichiers audio",
   "@libraryScanSubtitle": {
     "description": "Subtitle for scan button"
   },
@@ -2537,7 +2537,7 @@
       }
     }
   },
-  "libraryLastScanned": "Last scanned: {time}",
+  "libraryLastScanned": "Dernière analyse : {time}",
   "@libraryLastScanned": {
     "description": "Last scan time display",
     "placeholders": {
@@ -2546,11 +2546,11 @@
       }
     }
   },
-  "libraryLastScannedNever": "Never",
+  "libraryLastScannedNever": "Jamais",
   "@libraryLastScannedNever": {
     "description": "Shown when library has never been scanned"
   },
-  "libraryScanning": "Scanning...",
+  "libraryScanning": "En cours d'analyse...",
   "@libraryScanning": {
     "description": "Status during scan"
   },
@@ -2574,7 +2574,7 @@
   "@libraryInLibrary": {
     "description": "Badge shown on tracks that exist in local library"
   },
-  "libraryRemovedMissingFiles": "Removed {count} missing files from library",
+  "libraryRemovedMissingFiles": "{count} fichiers manquants ont été supprimés de la bibliothèque",
   "@libraryRemovedMissingFiles": {
     "description": "Snackbar after cleanup",
     "placeholders": {
@@ -2587,15 +2587,15 @@
   "@libraryCleared": {
     "description": "Snackbar after clearing library"
   },
-  "libraryStorageAccessRequired": "Storage Access Required",
+  "libraryStorageAccessRequired": "Accès au stockage requis",
   "@libraryStorageAccessRequired": {
     "description": "Dialog title for storage permission"
   },
-  "libraryStorageAccessMessage": "SpotiFLAC needs storage access to scan your music library. Please grant permission in settings.",
+  "libraryStorageAccessMessage": "SpotiFLAC a besoin d'un accès au stockage pour analyser votre bibliothèque musicale. Veuillez lui accorder l'autorisation dans les paramètres.",
   "@libraryStorageAccessMessage": {
     "description": "Dialog message for storage permission"
   },
-  "libraryFolderNotExist": "Selected folder does not exist",
+  "libraryFolderNotExist": "Le dossier sélectionné n'existe pas",
   "@libraryFolderNotExist": {
     "description": "Error when folder doesn't exist"
   },
@@ -4365,7 +4365,7 @@
   "@extensionsHomeFeedProvider": {
     "description": "Extensions page - label for home feed provider selector"
   },
-  "extensionsHomeFeedDescription": "Choose which extension provides the home feed on the main screen",
+  "extensionsHomeFeedDescription": "Choisissez l'extension qui affiche le fil d'actualité sur l'écran principal",
   "@extensionsHomeFeedDescription": {
     "description": "Extensions page - description for home feed provider picker"
   },
@@ -4373,7 +4373,7 @@
   "@extensionsHomeFeedAuto": {
     "description": "Label for auto-selected search provider"
   },
-  "extensionsHomeFeedAutoSubtitle": "Automatically select the best available",
+  "extensionsHomeFeedAutoSubtitle": "Sélectionnez automatiquement la meilleure option disponible",
   "@extensionsHomeFeedAutoSubtitle": {
     "description": "Extensions page - subtitle for auto home feed option"
   },
@@ -4381,11 +4381,11 @@
   "@extensionsHomeFeedOff": {
     "description": "Extensions page - home feed provider option: off"
   },
-  "extensionsHomeFeedOffSubtitle": "Do not show the home feed on the main screen",
+  "extensionsHomeFeedOffSubtitle": "Ne pas afficher le fil d'actualité sur l'écran principal",
   "@extensionsHomeFeedOffSubtitle": {
     "description": "Extensions page - subtitle for off home feed option"
   },
-  "extensionsHomeFeedUse": "Use {extensionName} home feed",
+  "extensionsHomeFeedUse": "Utiliser le fil d'actualité de {extensionName}",
   "@extensionsHomeFeedUse": {
     "description": "Extensions page - subtitle for a specific extension home feed option",
     "placeholders": {
@@ -4394,7 +4394,7 @@
       }
     }
   },
-  "extensionsNoHomeFeedExtensions": "No extensions with home feed",
+  "extensionsNoHomeFeedExtensions": "Aucune extension avec le flux principal",
   "@extensionsNoHomeFeedExtensions": {
     "description": "Extensions page - shown when no installed extension has home feed"
   },
@@ -4419,7 +4419,7 @@
       }
     }
   },
-  "cancelDownloadKeep": "Keep",
+  "cancelDownloadKeep": "Conserver",
   "@cancelDownloadKeep": {
     "description": "Dialog button - keep the active download (do not cancel)"
   },
@@ -4440,19 +4440,19 @@
       }
     }
   },
-  "errorLoadAlbum": "Failed to load album",
+  "errorLoadAlbum": "Impossible de charger l'album",
   "@errorLoadAlbum": {
     "description": "Error state shown when album fails to load"
   },
-  "errorLoadPlaylist": "Failed to load playlist",
+  "errorLoadPlaylist": "Impossible de charger la playlist",
   "@errorLoadPlaylist": {
     "description": "Error state shown when playlist fails to load"
   },
-  "errorLoadArtist": "Failed to load artist",
+  "errorLoadArtist": "Impossible de charger l'artiste",
   "@errorLoadArtist": {
     "description": "Error state shown when artist fails to load"
   },
-  "notifChannelDownloadName": "Download Progress",
+  "notifChannelDownloadName": "Progression du téléchargement",
   "@notifChannelDownloadName": {
     "description": "Android notification channel name for download progress"
   },
@@ -4460,7 +4460,7 @@
   "@notifChannelDownloadDesc": {
     "description": "Android notification channel description for download progress"
   },
-  "notifChannelLibraryScanName": "Library Scan",
+  "notifChannelLibraryScanName": "Analyse de la bibliothèque",
   "@notifChannelLibraryScanName": {
     "description": "Android notification channel name for library scan"
   },
@@ -4999,7 +4999,7 @@
   "@optionsDefaultSearchTabAlbums": {
     "description": "Default search tab option - Albums tab"
   },
-  "optionsDefaultSearchTabTracks": "Tracks",
+  "optionsDefaultSearchTabTracks": "Titres",
   "@optionsDefaultSearchTabTracks": {
     "description": "Default search tab option - Tracks tab"
   },
@@ -5119,7 +5119,7 @@
   "@libraryFilterMetadataMissingLabel": {
     "description": "Filter option - items missing record label"
   },
-  "collectionDeletePlaylistsMessage": "Delete {count} {count, plural, =1{playlist} other{playlists}}?",
+  "collectionDeletePlaylistsMessage": "Supprimer {count} {count, plural, one {}=1{playlist} other{playlists}}?",
   "@collectionDeletePlaylistsMessage": {
     "description": "Confirmation message for deleting selected playlists",
     "placeholders": {
@@ -5128,7 +5128,7 @@
       }
     }
   },
-  "collectionPlaylistsDeleted": "{count} {count, plural, =1{playlist} other{playlists}} deleted",
+  "collectionPlaylistsDeleted": "{count} {count, plural, one {}=1{playlist} other{playlists}} supprimées",
   "@collectionPlaylistsDeleted": {
     "description": "Snackbar after deleting selected playlists",
     "placeholders": {
@@ -5137,7 +5137,7 @@
       }
     }
   },
-  "collectionAddedTracksToPlaylist": "Added {count} {count, plural, =1{track} other{tracks}} to {playlistName}",
+  "collectionAddedTracksToPlaylist": "Ajout de {count} {count, plural, =1{titre} other{titres}} à {playlistName}",
   "@collectionAddedTracksToPlaylist": {
     "description": "Snackbar after adding multiple tracks to a playlist",
     "placeholders": {
@@ -5210,15 +5210,15 @@
   "@queueDownloadStarting": {
     "description": "Queue status before download progress is available"
   },
-  "a11ySelectTrack": "Select track",
+  "a11ySelectTrack": "Sélectionner une piste",
   "@a11ySelectTrack": {
     "description": "Accessibility label for selecting a track"
   },
-  "a11yDeselectTrack": "Deselect track",
+  "a11yDeselectTrack": "Désélectionner la piste",
   "@a11yDeselectTrack": {
     "description": "Accessibility label for deselecting a track"
   },
-  "a11yPlayTrackByArtist": "Play {trackName} by {artistName}",
+  "a11yPlayTrackByArtist": "Écouter {trackName} de {artistName}",
   "@a11yPlayTrackByArtist": {
     "description": "Accessibility label for playing a local library track",
     "placeholders": {
@@ -5248,7 +5248,7 @@
       }
     }
   },
-  "actionGo": "Go",
+  "actionGo": "Aller",
   "@actionGo": {
     "description": "Generic action button label"
   },
@@ -5291,7 +5291,7 @@
       }
     }
   },
-  "downloadNativeWorker": "Native download worker",
+  "downloadNativeWorker": "Tâche de téléchargement native",
   "@downloadNativeWorker": {
     "description": "Setting title for Android native download worker"
   },
