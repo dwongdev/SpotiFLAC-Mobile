@@ -43,7 +43,7 @@ dependencies:
   permission_handler: ^12.0.3
 
   # File Picker
-  file_picker: ^11.0.2
+  file_picker: ^12.0.0-beta.5
 
   # JSON Serialization
   json_annotation: ^4.12.0
@@ -71,13 +71,6 @@ dev_dependencies:
   riverpod_lint: ^3.1.4
   json_serializable: ^6.14.0
   flutter_launcher_icons: ^0.14.3
-
-# file_picker (stable 11.x) pins win32 ^5.9.0, while device_info_plus and
-# other *_plus plugins require win32 ^6.x. win32 is a Windows-desktop-only
-# transitive dependency and is never compiled for the Android/iOS targets, so
-# we override it to satisfy resolution without affecting mobile builds.
-dependency_overrides:
-  win32: ^6.0.1
 
 flutter_launcher_icons:
   android: true
