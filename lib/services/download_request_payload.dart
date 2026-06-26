@@ -21,6 +21,7 @@ class DownloadRequestPayload {
   final bool postProcessingEnabled;
   final String tidalHighFormat;
   final int trackNumber;
+  final int playlistPosition;
   final int discNumber;
   final int totalTracks;
   final int totalDiscs;
@@ -70,6 +71,7 @@ class DownloadRequestPayload {
     this.postProcessingEnabled = false,
     this.tidalHighFormat = 'mp3_320',
     this.trackNumber = 0,
+    this.playlistPosition = 0,
     this.discNumber = 0,
     this.totalTracks = 1,
     this.totalDiscs = 0,
@@ -121,6 +123,7 @@ class DownloadRequestPayload {
       'post_processing_enabled': postProcessingEnabled,
       'tidal_high_format': tidalHighFormat,
       'track_number': trackNumber,
+      'playlist_position': playlistPosition,
       'disc_number': discNumber,
       'total_tracks': totalTracks,
       'total_discs': totalDiscs,
@@ -176,6 +179,7 @@ class DownloadRequestPayload {
       postProcessingEnabled: postProcessingEnabled,
       tidalHighFormat: tidalHighFormat,
       trackNumber: trackNumber,
+      playlistPosition: playlistPosition,
       discNumber: discNumber,
       totalTracks: totalTracks,
       totalDiscs: totalDiscs,

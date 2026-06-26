@@ -964,11 +964,14 @@ class _FilenameFormatEditorSheetState
     '{year}',
     '{date}',
     '{disc}',
+    '{playlist_position}',
   ];
   static const _advancedTags = [
     '{track_raw}',
     '{track:02}',
     '{track:1}',
+    '{playlist_position_raw}',
+    '{playlist_position:02}',
     '{date:%Y}',
     '{date:%Y-%m-%d}',
     '{disc_raw}',

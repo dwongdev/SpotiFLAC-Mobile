@@ -3746,6 +3746,7 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
     String service, {
     String? qualityOverride,
     String? playlistName,
+    int? playlistPosition,
   }) {
     final settings = ref.read(settingsProvider);
     updateSettings(settings);
@@ -3759,6 +3760,7 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
       createdAt: DateTime.now(),
       qualityOverride: qualityOverride,
       playlistName: playlistName,
+      playlistPosition: playlistPosition,
     );
 
     state = state.copyWith(items: [...state.items, item]);
@@ -3776,12 +3778,22 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
     String service, {
     String? qualityOverride,
     String? playlistName,
+    List<int?>? playlistPositions,
   }) {
     final settings = ref.read(settingsProvider);
     updateSettings(settings);
 
     final takenIds = state.items.map((item) => item.id).toSet();
-    final newItems = tracks.map((track) {
+    final shouldAssignPlaylistPositions =
+        playlistName != null && playlistName.trim().isNotEmpty;
+    final newItems = tracks.asMap().entries.map((entry) {
+      final track = entry.value;
+      final index = entry.key;
+      final explicitPosition = playlistPositions != null &&
+              index < playlistPositions.length &&
+              (playlistPositions[index] ?? 0) > 0
+          ? playlistPositions[index]
+          : null;
       final id = _newQueueItemId(track, takenIds: takenIds);
       takenIds.add(id);
       return DownloadItem(
@@ -3791,6 +3803,8 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
         createdAt: DateTime.now(),
         qualityOverride: qualityOverride,
         playlistName: playlistName,
+        playlistPosition:
+            explicitPosition ?? (shouldAssignPlaylistPositions ? index + 1 : null),
       );
     }).toList();
 
@@ -3800,6 +3814,45 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
     if (!state.isProcessing) {
       Future.microtask(() => _processQueue());
     }
+  }
+
+  int _validPlaylistPosition(DownloadItem item) {
+    final position = item.playlistPosition;
+    if (position == null || position <= 0) return 0;
+    return position;
+  }
+
+  String _filenameFormatForItem(DownloadItem item, String baseFormat) {
+    if (_validPlaylistPosition(item) == 0 ||
+        item.playlistName == null ||
+        item.playlistName!.trim().isEmpty) {
+      return baseFormat;
+    }
+
+    final lower = baseFormat.toLowerCase();
+    if (lower.contains('{playlist_position') ||
+        lower.contains('{playlist position') ||
+        lower.contains('{playlistposition')) {
+      return baseFormat;
+    }
+    return '{playlist_position:02} - $baseFormat';
+  }
+
+  Map<String, dynamic> _filenameMetadataForTrack(
+    Track track, {
+    int playlistPosition = 0,
+  }) {
+    return {
+      'title': track.name,
+      'artist': track.artistName,
+      'album': track.albumName,
+      'track': track.trackNumber ?? 0,
+      'disc': track.discNumber ?? 0,
+      'year': _extractYear(track.releaseDate) ?? '',
+      'date': track.releaseDate ?? '',
+      'playlist_position': playlistPosition,
+      'playlistPosition': playlistPosition,
+    };
   }
 
   void updateItemStatus(
@@ -5703,19 +5756,21 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
 
     String? safFileName;
     final safOutputExt = isSafMode ? outputExt : '';
+    final baseFilenameFormat = _shouldTreatAsSingleRelease(item.track)
+        ? state.singleFilenameFormat
+        : state.filenameFormat;
+    final effectiveFilenameFormat = _filenameFormatForItem(
+      item,
+      baseFilenameFormat,
+    );
     if (isSafMode) {
-      final effectiveFormat = _shouldTreatAsSingleRelease(item.track)
-          ? state.singleFilenameFormat
-          : state.filenameFormat;
-      final baseName = await PlatformBridge.buildFilename(effectiveFormat, {
-        'title': item.track.name,
-        'artist': item.track.artistName,
-        'album': item.track.albumName,
-        'track': item.track.trackNumber ?? 0,
-        'disc': item.track.discNumber ?? 0,
-        'year': _extractYear(item.track.releaseDate) ?? '',
-        'date': item.track.releaseDate ?? '',
-      });
+      final baseName = await PlatformBridge.buildFilename(
+        effectiveFilenameFormat,
+        _filenameMetadataForTrack(
+          item.track,
+          playlistPosition: _validPlaylistPosition(item),
+        ),
+      );
       safFileName = await _buildSafFileName(baseName, safOutputExt);
     }
 
@@ -5803,9 +5858,7 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
       albumArtist: resolvedAlbumArtist ?? '',
       coverUrl: settings.embedMetadata ? (trackForPayload.coverUrl ?? '') : '',
       outputDir: outputDir,
-      filenameFormat: _shouldTreatAsSingleRelease(trackForPayload)
-          ? state.singleFilenameFormat
-          : state.filenameFormat,
+      filenameFormat: effectiveFilenameFormat,
       quality: quality,
       embedMetadata: settings.embedMetadata,
       artistTagMode: settings.artistTagMode,
@@ -5822,6 +5875,7 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
       postProcessingEnabled: postProcessingEnabled,
       tidalHighFormat: settings.tidalHighFormat,
       trackNumber: normalizedTrackNumber,
+      playlistPosition: _validPlaylistPosition(item),
       discNumber: normalizedDiscNumber,
       totalTracks: trackForPayload.totalTracks ?? 0,
       totalDiscs: trackForPayload.totalDiscs ?? 0,
@@ -7328,19 +7382,21 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
       String? safFileName;
       String? safBaseName;
       String safOutputExt = _determineOutputExt(quality, item.service);
+      final baseFilenameFormat = _shouldTreatAsSingleRelease(trackToDownload)
+          ? state.singleFilenameFormat
+          : state.filenameFormat;
+      final effectiveFilenameFormat = _filenameFormatForItem(
+        item,
+        baseFilenameFormat,
+      );
       if (isSafMode) {
-        final effectiveFormat = _shouldTreatAsSingleRelease(trackToDownload)
-            ? state.singleFilenameFormat
-            : state.filenameFormat;
-        final baseName = await PlatformBridge.buildFilename(effectiveFormat, {
-          'title': trackToDownload.name,
-          'artist': trackToDownload.artistName,
-          'album': trackToDownload.albumName,
-          'track': trackToDownload.trackNumber ?? 0,
-          'disc': trackToDownload.discNumber ?? 0,
-          'year': _extractYear(trackToDownload.releaseDate) ?? '',
-          'date': trackToDownload.releaseDate ?? '',
-        });
+        final baseName = await PlatformBridge.buildFilename(
+          effectiveFilenameFormat,
+          _filenameMetadataForTrack(
+            trackToDownload,
+            playlistPosition: _validPlaylistPosition(item),
+          ),
+        );
         safFileName = await _buildSafFileName(baseName, safOutputExt);
         safBaseName = safFileName.replaceFirst(RegExp(r'\.[^.]+$'), '');
       }
@@ -7529,9 +7585,7 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
               ? (trackToDownload.coverUrl ?? '')
               : '',
           outputDir: outputDir,
-          filenameFormat: _shouldTreatAsSingleRelease(trackToDownload)
-              ? state.singleFilenameFormat
-              : state.filenameFormat,
+          filenameFormat: effectiveFilenameFormat,
           quality: quality,
           embedMetadata: metadataEmbeddingEnabled,
           artistTagMode: settings.artistTagMode,
@@ -7549,6 +7603,7 @@ class DownloadQueueNotifier extends Notifier<DownloadQueueState> {
           postProcessingEnabled: postProcessingEnabled,
           tidalHighFormat: settings.tidalHighFormat,
           trackNumber: normalizedTrackNumber,
+          playlistPosition: _validPlaylistPosition(item),
           discNumber: normalizedDiscNumber,
           totalTracks: trackToDownload.totalTracks ?? 0,
           totalDiscs: trackToDownload.totalDiscs ?? 0,

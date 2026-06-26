@@ -564,7 +564,11 @@ class _PlaylistScreenState extends ConsumerState<PlaylistScreen> {
             child: _PlaylistTrackItem(
               track: track,
               isInHistory: isInHistory,
-              onDownload: () => _downloadTrack(context, track),
+              onDownload: () => _downloadTrack(
+                context,
+                track,
+                playlistPosition: index + 1,
+              ),
             ),
           ),
         );
@@ -572,7 +576,11 @@ class _PlaylistScreenState extends ConsumerState<PlaylistScreen> {
     );
   }
 
-  void _downloadTrack(BuildContext context, Track track) {
+  void _downloadTrack(
+    BuildContext context,
+    Track track, {
+    int? playlistPosition,
+  }) {
     final settings = ref.read(settingsProvider);
 
     if (settings.askQualityBeforeDownload) {
@@ -590,6 +598,7 @@ class _PlaylistScreenState extends ConsumerState<PlaylistScreen> {
                 service,
                 qualityOverride: quality,
                 playlistName: _playlistName,
+                playlistPosition: playlistPosition,
               );
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
@@ -612,7 +621,12 @@ class _PlaylistScreenState extends ConsumerState<PlaylistScreen> {
       }
       ref
           .read(downloadQueueProvider.notifier)
-          .addToQueue(track, service, playlistName: _playlistName);
+          .addToQueue(
+            track,
+            service,
+            playlistName: _playlistName,
+            playlistPosition: playlistPosition,
+          );
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(context.l10n.snackbarAddedToQueue(track.name))),
       );
