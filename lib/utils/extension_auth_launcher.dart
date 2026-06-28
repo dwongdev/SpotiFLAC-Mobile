@@ -11,6 +11,7 @@ bool isExtensionVerificationRequired(Object error) {
       message.contains('verification required') ||
       message.contains('needsverification') ||
       message.contains('needs verification') ||
+      message.contains('session is not authenticated') ||
       message.contains('unauthorized') ||
       message.contains('precondition required') ||
       _containsHttpStatusCode(message, '401') ||
