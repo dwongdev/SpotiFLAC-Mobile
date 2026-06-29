@@ -15,8 +15,9 @@ import (
 const (
 	extensionHealthDefaultTimeout = 4 * time.Second
 	extensionHealthMaxBodyBytes   = 64 * 1024
-	extensionHealthDefaultCache   = 60 * time.Second
-	extensionHealthUnknownCache   = 20 * time.Second
+	extensionHealthDefaultCache   = 10 * time.Minute
+	extensionHealthMinCache       = 60 * time.Second
+	extensionHealthUnknownCache   = 2 * time.Minute
 )
 
 type ExtensionHealthResult struct {
@@ -166,6 +167,9 @@ func extensionHealthCacheTTL(checks []ExtensionHealthCheck) time.Duration {
 			continue
 		}
 		checkTTL := time.Duration(check.CacheTTLSeconds) * time.Second
+		if checkTTL < extensionHealthMinCache {
+			checkTTL = extensionHealthMinCache
+		}
 		if checkTTL < ttl {
 			ttl = checkTTL
 		}

@@ -808,7 +808,9 @@ class ExtensionInstallBatchResult {
 }
 
 class ExtensionNotifier extends Notifier<ExtensionState> {
-  static const _extensionHealthCacheTtl = Duration(seconds: 60);
+  static const _extensionHealthDefaultCacheTtl = Duration(minutes: 10);
+  static const _extensionHealthMinimumCacheTtl = Duration(minutes: 1);
+  static const _extensionHealthUnknownCacheTtl = Duration(minutes: 2);
   AppLifecycleListener? _appLifecycleListener;
   bool _cleanupInFlight = false;
   Completer<void>? _initializationCompleter;
@@ -970,6 +972,34 @@ class ExtensionNotifier extends Notifier<ExtensionState> {
     _scheduleExtensionHealthRefresh(state.extensions, force: force);
   }
 
+  Duration _extensionHealthCacheTtlFor(Extension extension) {
+    var ttl = _extensionHealthDefaultCacheTtl;
+    for (final check in extension.serviceHealth) {
+      final seconds = check.cacheTtlSeconds;
+      if (seconds == null || seconds <= 0) continue;
+
+      var checkTtl = Duration(seconds: seconds);
+      if (checkTtl < _extensionHealthMinimumCacheTtl) {
+        checkTtl = _extensionHealthMinimumCacheTtl;
+      }
+      if (checkTtl < ttl) {
+        ttl = checkTtl;
+      }
+    }
+    return ttl;
+  }
+
+  Duration _extensionHealthCacheTtlForStatus(
+    Extension extension,
+    String status,
+  ) {
+    final ttl = _extensionHealthCacheTtlFor(extension);
+    if (status == 'unknown' && ttl > _extensionHealthUnknownCacheTtl) {
+      return _extensionHealthUnknownCacheTtl;
+    }
+    return ttl;
+  }
+
   Future<ExtensionHealthStatus?> checkExtensionHealth(
     String extensionId, {
     bool force = false,
@@ -1007,7 +1037,7 @@ class ExtensionNotifier extends Notifier<ExtensionState> {
             state.healthStatuses,
           )..[extensionId] = status;
           _healthExpiresAt[extensionId] = DateTime.now().add(
-            _extensionHealthCacheTtl,
+            _extensionHealthCacheTtlForStatus(ext, status.status),
           );
           state = state.copyWith(healthStatuses: updated);
         }
@@ -1025,7 +1055,7 @@ class ExtensionNotifier extends Notifier<ExtensionState> {
             state.healthStatuses,
           )..[extensionId] = status;
           _healthExpiresAt[extensionId] = DateTime.now().add(
-            const Duration(seconds: 20),
+            _extensionHealthUnknownCacheTtl,
           );
           state = state.copyWith(healthStatuses: updated);
         }

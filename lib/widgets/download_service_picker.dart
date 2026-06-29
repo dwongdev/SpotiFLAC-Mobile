@@ -75,9 +75,7 @@ class _DownloadServicePickerState extends ConsumerState<DownloadServicePicker> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      ref
-          .read(extensionProvider.notifier)
-          .refreshEnabledExtensionHealth(force: true);
+      ref.read(extensionProvider.notifier).refreshEnabledExtensionHealth();
     });
     final downloadExtensions = _downloadExtensions();
     final recommended = widget.recommendedService;
@@ -109,9 +107,7 @@ class _DownloadServicePickerState extends ConsumerState<DownloadServicePicker> {
     setState(() => _selectedService = extension.id);
     if (extension.hasServiceHealth) {
       unawaited(
-        ref
-            .read(extensionProvider.notifier)
-            .checkExtensionHealth(extension.id, force: true),
+        ref.read(extensionProvider.notifier).checkExtensionHealth(extension.id),
       );
     }
   }
